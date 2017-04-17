@@ -20,7 +20,7 @@ public class Lina extends BaseBot {
         ENABLED, DISABLED
     }
 
-    private static final String MY_HERO_NAME = "npc_dota_hero_lina";
+    private static final String MY_HERO_NAME = "npc_dota_hero_drow_ranger";
 
     private static float distance( BaseEntity a, BaseEntity b ) {
         final float[] posA = a.getOrigin();
@@ -40,7 +40,7 @@ public class Lina extends BaseBot {
 
     private int[] myLevels;
 
-    private Mode mode = Mode.DISABLED;
+    private Mode mode = Mode.ENABLED;
     private boolean shouldRetreat;
     private boolean shouldBuyTango;
     private boolean shouldSellTango;
@@ -54,8 +54,12 @@ public class Lina extends BaseBot {
     @Override
     public LevelUp levelUp() {
         LEVELUP.setAbilityIndex( -1 );
-
-        if (myLevels[0] < 4) {
+        Random rand = new Random();
+        int level = rand.nextInt(3);
+        while (myLevels[level] >= 4){
+        	level = rand.nextInt(3);
+        }
+      /*  if (myLevels[0] < 4) {
             LEVELUP.setAbilityIndex( 0 );
         }
         else if (myLevels[1] < 4) {
@@ -66,6 +70,10 @@ public class Lina extends BaseBot {
         }
         else if (myLevels[3] < 3) {
             LEVELUP.setAbilityIndex( 3 );
+        }*/
+        if (myLevels[level] < 4)
+        {
+        	LEVELUP.setAbilityIndex(level);
         }
         else if (myLevels[4] < 10) {
             LEVELUP.setAbilityIndex( 4 );
@@ -142,13 +150,14 @@ public class Lina extends BaseBot {
 //            System.out.println( a );
 //        }
 
-        if (lina.getHealth() <= lina.getMaxHealth() * 0.4) {
-            return retreat( world );
-        }
 
         final float range = lina.getAttackRange();
         final Set<BaseEntity> e = findEntitiesInRange( world, lina, range ).stream().filter( p -> p instanceof BaseNPC )
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
+        if (lina.getHealth() <= lina.getMaxHealth() * 0.4) 
+        {
+        	return retreat( world );
+        }
         if (!e.isEmpty()) {
             return attack( lina, e, world );
         }
@@ -157,24 +166,36 @@ public class Lina extends BaseBot {
         }
     }
 
-    private Command attack( Hero lina, Set<BaseEntity> e, World world ) {
-        final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
+    private Command attack( Hero lina, Set<BaseEntity> e, World world ) 
+    {
+       /* final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
                         .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
-        if (target == null) {
+        */
+    	 final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
+                 .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() || ((BaseNPC) f).getHealth() <  lina.getHealth() ).findFirst().orElse( null );
+         
+    	 if (target == null) 
+    	 {
             //Nothing in range
             System.out.println( "No enemy in range" );
             return NOOP;
         }
-
+    	if (distance(lina, target) + 50 < lina.getAttackRange()) 
+        {
+             return retreat( world );
+        }
         //If lina has enough mana, there's a 30 % chance that she'll cast a spell
-        if (lina.getMana() > lina.getMaxMana() * 0.5 && Math.random() > 0.3) {
+        if (target != null && lina.getMana() > lina.getMaxMana() * 0.5 && Math.random() > 0.3) {
+        	double percentHealth = (double)target.getHealth() / (double)target.getMaxHealth();
+	       	 System.out.println(percentHealth);
+
             return castSpell( lina, target, world );
         }
         else {
             //Otherwise she just attacks
             final int targetindex = world.indexOf( target );
             ATTACK.setTarget( targetindex );
-            System.out.println( "Attacking" );
+         //   System.out.println( "Attacking" );
 
             return ATTACK;
         }
@@ -233,7 +254,8 @@ public class Lina extends BaseBot {
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
         final BaseEntity target = en.stream().sorted( ( e1, e2 ) -> Float.compare( distance( lina, e1 ), distance( lina, e2 ) ) )
                         .filter( f -> f.getClass() != Tower.class ).findFirst().orElse( null );
-        if (target == null) {
+        if (target == null)
+        {
             //Nothing in range
             System.out.println( "No enemy in sight" );
             return NOOP;
@@ -244,14 +266,14 @@ public class Lina extends BaseBot {
         MOVE.setY( targetPos[1] );
         MOVE.setZ( targetPos[2] );
 
-        System.out.println( "Moving" );
+       // System.out.println( "Moving" );
 
         return MOVE;
     }
 
     private Command retreat( World world ) {
         //Retreat at 30% health
-        System.out.println( "Lina is retreating" );
+       // System.out.println( "Lina is retreating" );
         final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals( "ent_dota_fountain_good" ) )
                         .findAny().get().getValue();
         final float[] targetPos = fountain.getOrigin();
