@@ -1,6 +1,9 @@
 package de.lighti.dota2.bot;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
         
 import org.tensorflow.Graph;
@@ -21,12 +24,12 @@ import se.lu.lucs.dota2.framework.game.Hero;
 import se.lu.lucs.dota2.framework.game.Tower;
 import se.lu.lucs.dota2.framework.game.World;
 
-public class Agent extends BaseBot {
+public class Lina extends BaseBot {
     private enum Mode {
         ENABLED, DISABLED
     }
 
-    private static final String MY_HERO_NAME = "npc_dota_hero_drow_ranger";
+    private static final String MY_HERO_NAME = "npc_dota_hero_lina";
 
     private static float distance( BaseEntity a, BaseEntity b ) {
         final float[] posA = a.getOrigin();
@@ -46,51 +49,66 @@ public class Agent extends BaseBot {
 
     private int[] myLevels;
 
-    private Mode mode = Mode.ENABLED;
+    private Mode mode = Mode.DISABLED;
     private boolean shouldRetreat;
     private boolean shouldBuyTango;
     private boolean shouldSellTango;
-
-    public Agent() {
-        System.out.println( "Creating agent" );
+    private NeuralNetwork nn;
+    
+    public Lina() {
+        System.out.println( "Creating Lina" );
         myLevels = new int[5];
-
-        // test tensorflow
-        try (Graph g = new Graph()) {
-            final String value = "Hello from " + TensorFlow.version();
-
-            // Construct the computation graph with a single operation, a constant
-            // named "MyConst" with a value "value".
-            try (Tensor t = Tensor.create(value.getBytes("UTF-8"))) {
-              // The Java API doesn't yet include convenience functions for adding operations.
-              g.opBuilder("Const", "MyConst").setAttr("dtype", t.dataType()).setAttr("value", t).build();
-            }
-            catch (UnsupportedEncodingException e) {
-            	e.printStackTrace();
-            	System.exit(1);
-            }
-
-            // Execute the "MyConst" operation in a Session.
-            try (Session s = new Session(g);
-                 Tensor output = s.runner().fetch("MyConst").run().get(0)) {
-              System.out.println(new String(output.bytesValue(), "UTF-8"));
-            }
-            catch (UnsupportedEncodingException e) {
-            	e.printStackTrace();
-            	System.exit(1);
-            }
-		}
+        nn = new NeuralNetwork();
+        
     }
-
+    public void train(Hero agent,World world)
+    {
+    	
+    	//obtain game data from agent
+    	//health and mp are float percentages.
+    	float hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
+    	float mp = (float)agent.getMana()/ (float)agent.getMaxMana();
+    	float range = agent.getAttackRange();
+    	float gold = agent.getGold();
+    	float level = agent.getLevel();
+    	
+    	List<Float> abilityDamages = new ArrayList<Float>();
+    	List<Float> enemyDistances = new ArrayList<Float>();
+    	//Get a list of the first four abilities, the other indices are probably items.
+    	for (int i = 0; i < 4; i++){
+    		Ability a = agent.getAbilities().get(i);
+    		abilityDamages.add((float)a.getAbilityDamage());
+    		//System.out.println(abilityDamages.get(i));
+    	}
+    	Map<Integer, Ability> map = agent.getAbilities();
+    	for (Map.Entry<Integer, Ability> entry : map.entrySet())
+    	{
+    		//System.out.println(entry.getKey() + "/" + entry.getValue());
+    	}
+    	 //Obtain entities in a wide range
+        final Set<BaseEntity> e = findEntitiesInRange( world, agent, range*10 ).stream().filter( p -> p instanceof BaseNPC )
+                .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
+      //Filter enemies in range
+        final ArrayList<BaseEntity> enemies = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).collect(Collectors.toList());
+        BaseEntity current = null;
+        for (int i = 0; i < enemies.size(); i++)
+        {
+        	current = enemies.get(i);
+        	System.out.println("Enemy + " + i);
+        	//System.out.println(current.getMaxHealth());
+        	//System.out.println(current.getHealth());
+        	//System.out.println(current.getName());
+        	System.out.println(distance(current.getOrigin(), agent.getOrigin()));
+        }
+        
+        
+    }
+    
     @Override
     public LevelUp levelUp() {
         LEVELUP.setAbilityIndex( -1 );
-        Random rand = new Random();
-        int level = rand.nextInt(3);
-        while (myLevels[level] >= 4){
-        	level = rand.nextInt(3);
-        }
-      /*  if (myLevels[0] < 4) {
+
+        if (myLevels[0] < 4) {
             LEVELUP.setAbilityIndex( 0 );
         }
         else if (myLevels[1] < 4) {
@@ -101,10 +119,6 @@ public class Agent extends BaseBot {
         }
         else if (myLevels[3] < 3) {
             LEVELUP.setAbilityIndex( 3 );
-        }*/
-        if (myLevels[level] < 4)
-        {
-        	LEVELUP.setAbilityIndex(level);
         }
         else if (myLevels[4] < 10) {
             LEVELUP.setAbilityIndex( 4 );
@@ -116,17 +130,17 @@ public class Agent extends BaseBot {
     @Override
     public void onChat( ChatEvent e ) {
         switch (e.getText()) {
-            case "agent go":
+            case "lina go":
                 mode = Mode.ENABLED;
                 break;
-            case "agent stop":
+            case "lina stop":
                 shouldRetreat = true;
                 mode = Mode.DISABLED;
                 break;
-            case "agent sell tango":
+            case "lina sell tango":
                 shouldSellTango = true;
                 break;
-            case "agent buy tango":
+            case "lina buy tango":
                 shouldBuyTango = true;
                 break;
         }
@@ -170,64 +184,54 @@ public class Agent extends BaseBot {
         final int myIndex = world.searchIndexByName( MY_HERO_NAME );
         if (myIndex < 0) {
             //I'm probably dead
-            System.out.println( "I'm dead?" );
+            //System.out.println( "I'm dead?" );
             reset();
             return NOOP;
         }
 
-        final Hero agent = (Hero) world.getEntities().get( myIndex );
-//        for (final Ability a : agent.getAbilities().values()) {
+        final Hero lina = (Hero) world.getEntities().get( myIndex );
+//        for (final Ability a : lina.getAbilities().values()) {
 //            myLevels[a.getAbilityIndex()] = a.getLevel();
 //            System.out.println( a );
 //        }
-
-
-        final float range = agent.getAttackRange();
-        final Set<BaseEntity> e = findEntitiesInRange( world, agent, range ).stream().filter( p -> p instanceof BaseNPC )
-                        .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-        if (agent.getHealth() <= agent.getMaxHealth() * 0.4) 
-        {
-        	return retreat( world );
+        if (lina.getHealth() <= lina.getMaxHealth() * 0.4) {
+            return retreat( world );
         }
+
+        final float range = lina.getAttackRange();
+        final Set<BaseEntity> e = findEntitiesInRange( world, lina, range ).stream().filter( p -> p instanceof BaseNPC )
+                        .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
+        
+        //Train agent on update
+        train(lina, world);
+
         if (!e.isEmpty()) {
-            return attack( agent, e, world );
+            return attack( lina, e, world );
         }
         else {
-            return move( agent, world );
+            return move( lina, world );
         }
     }
 
-    private Command attack( Hero agent, Set<BaseEntity> e, World world ) 
+    private Command attack( Hero lina, Set<BaseEntity> e, World world ) 
     {
-       /* final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
-                        .filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).findFirst().orElse( null );
-        */
-    	 final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
-                 .filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() || ((BaseNPC) f).getHealth() <  agent.getHealth() ).findFirst().orElse( null );
-         
-    	 if (target == null) 
-    	 {
+        final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
+                        .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
+        if (target == null) {
             //Nothing in range
             System.out.println( "No enemy in range" );
             return NOOP;
         }
-		double percentHealth = (double)target.getHealth() / (double)target.getMaxHealth();
-    	if (distance(agent, target) + 100 < agent.getAttackRange()) 
-        {
-             return retreat( world );
-        }
-        //If agent has enough mana, there's a 30 % chance that she'll cast a spell
-        if (target != null && agent.getMana() > agent.getMaxMana() * 0.5 && Math.random() > 0.3) {
-        
-	       
 
-            return castSpell( agent, target, world );
+        //If lina has enough mana, there's a 30 % chance that she'll cast a spell
+        if (lina.getMana() > lina.getMaxMana() * 0.5 && Math.random() > 0.3) {
+            return castSpell( lina, target, world );
         }
         else {
             //Otherwise she just attacks
             final int targetindex = world.indexOf( target );
             ATTACK.setTarget( targetindex );
-         //   System.out.println( "Attacking" );
+            System.out.println( "Attacking" );
 
             return ATTACK;
         }
@@ -245,10 +249,10 @@ public class Agent extends BaseBot {
         return SELL;
     }
 
-    private Command castSpell( Hero agent, BaseEntity target, World world ) {
+    private Command castSpell( Hero lina, BaseEntity target, World world ) {
         final Random r = new Random();
         final int index = r.nextInt( 4 );
-        final Ability a = agent.getAbilities().get( index );
+        final Ability a = lina.getAbilities().get( index );
         if (a.getAbilityDamageType() == Ability.DOTA_ABILITY_BEHAVIOR_POINT) {
             return NOOP;
         }
@@ -280,11 +284,11 @@ public class Agent extends BaseBot {
         return CAST;
     }
 
-    private Command move( Hero agent, World world ) {
+    private Command move( Hero lina, World world ) {
         //Walk up to the nearest enemy
-        final Set<BaseEntity> en = findEntitiesInRange( world, agent, Float.POSITIVE_INFINITY ).stream().filter( p -> p instanceof BaseNPC )
+        final Set<BaseEntity> en = findEntitiesInRange( world, lina, Float.POSITIVE_INFINITY ).stream().filter( p -> p instanceof BaseNPC )
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-        final BaseEntity target = en.stream().sorted( ( e1, e2 ) -> Float.compare( distance( agent, e1 ), distance( agent, e2 ) ) )
+        final BaseEntity target = en.stream().sorted( ( e1, e2 ) -> Float.compare( distance( lina, e1 ), distance( lina, e2 ) ) )
                         .filter( f -> f.getClass() != Tower.class ).findFirst().orElse( null );
         if (target == null)
         {
@@ -298,14 +302,14 @@ public class Agent extends BaseBot {
         MOVE.setY( targetPos[1] );
         MOVE.setZ( targetPos[2] );
 
-       // System.out.println( "Moving" );
+        System.out.println( "Moving" );
 
         return MOVE;
     }
 
     private Command retreat( World world ) {
         //Retreat at 30% health
-       // System.out.println( "agent is retreating" );
+        System.out.println( "Lina is retreating" );
         final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals( "ent_dota_fountain_good" ) )
                         .findAny().get().getValue();
         final float[] targetPos = fountain.getOrigin();
