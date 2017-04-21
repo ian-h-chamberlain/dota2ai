@@ -1,15 +1,10 @@
 package de.lighti.dota2.bot;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
         
-import org.tensorflow.Graph;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
-import org.tensorflow.TensorFlow;
 import java.util.Set;
 import java.util.stream.Collectors;
 
