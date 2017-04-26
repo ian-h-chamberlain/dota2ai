@@ -1,6 +1,7 @@
 package de.lighti.dota2.bot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,12 +19,15 @@ public class AgentData {
 	List<Float> abilityDamages;
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
+	HashMap<String, Float> towerDistances;
+	
 	public AgentData()
 	{
 		hp = mp = range = gold = level = 0.0f;
 		abilityDamages = new ArrayList<Float>();
 		coolDowns = new ArrayList<Float>();
 		enemyDistances = new ArrayList<Float>();
+		towerDistances = new HashMap<String, Float>();
 	}
 	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
@@ -60,11 +64,10 @@ public class AgentData {
         final ArrayList<BaseEntity> enemies = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).collect(Collectors.toList());
         final ArrayList<BaseEntity> towers = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).filter( f -> f.getClass() == Tower.class).collect(Collectors.toList());
         
-        //Tower info
-        BaseEntity current = null;
+        //Tower info, add all distances from visible enemy towers to this hash map.
         for (int i = 0; i < towers.size(); i++)
         {
-        	current = towers.get(i);
+        	towerDistances.put(towers.get(i).getName(), distance(pos, towers.get(i).getOrigin()));
         }
         
         //Package data and send to NN

@@ -7,7 +7,6 @@ import org.tensorflow.Tensor;
 import org.tensorflow.TensorFlow;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 
 public class NeuralNetwork {
 	public Graph graph;
@@ -29,26 +28,16 @@ public class NeuralNetwork {
             //You can create a tensor using a standard float[] object.
             //Not sure if the best way to handle this is to create multiple tensors with one data each
             //or compress all the data into one tensor.
-            Output outA;
-            Output outB;
-            Output outC;
-            try (Tensor inputA = Tensor.create(inputs))
-            {
-            	//This is the same as
-            	outA = constant(g, "MyFloatA", inputs);
-            	//This
-            	/*g.opBuilder("Const", "MyFloat")
-            	.setAttr("dtype", in.dataType())
-            	.setAttr("value", in)
-            	.build();*/
-            }
-            try (Tensor inputB = Tensor.create(testInputs))
-            {
-            	 outB = constant(g, "MyFloatB", inputs);
-            	 outC = constant(g, "MyFloatC", testInputs);
-            	 //Subtract operation
-            	 outC = sub(outC, outA);
-            }
+            Output outA = constant(g, "MyFloatA", inputs);;
+            Output outB = constant(g, "MyFloatB", testInputs);
+            Output outC = sub(outB, outA);
+			//constant(graph, "Type", input) same as
+			/*g.opBuilder("Const", "MyFloat")
+			.setAttr("dtype", in.dataType())
+			.setAttr("value", in)
+			.build();*/
+           
+           
             // Construct the computation graph with a single operation, a constant
             // named "MyConst" with a value "value".
             try (Tensor t = Tensor.create(value.getBytes("UTF-8")))
@@ -66,7 +55,7 @@ public class NeuralNetwork {
             // Execute the "MyConst" operation in a Session.
             try (Session s = new Session(g);
         		 Tensor out1 = s.runner().fetch(outC.op().name()).run().get(0);
-                 Tensor out2 = s.runner().fetch("MyFloatC").run().get(0);
+                 Tensor out2 = s.runner().fetch("MyFloatB").run().get(0);
         		 Tensor out3 = s.runner().fetch("MyConst").run().get(0);
             	)
             {
