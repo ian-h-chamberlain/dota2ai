@@ -29,7 +29,7 @@ public class AgentData {
     	//obtain game data from agent
     	//health and mp are float percentages.
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
-    	mp = (float)agent.getMana()/ (float)agent.getMaxMana();
+    	mp = (float)agent.getMana() / (float)agent.getMaxMana();
     	range = agent.getAttackRange();
     	gold = (float)agent.getGold();
     	level = (float)agent.getLevel();
@@ -66,6 +66,9 @@ public class AgentData {
         {
         	current = towers.get(i);
         }
+        
+        //Package data and send to NN
+        //I can make this more organized if necessary.
 		float parsedData[] = { hp, mp, range, level, gold, pos[0], pos[1], pos[2] };
 		return parsedData;
 	}

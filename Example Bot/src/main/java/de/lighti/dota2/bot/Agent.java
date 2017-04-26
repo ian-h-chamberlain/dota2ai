@@ -52,7 +52,6 @@ public class Agent extends BaseBot {
         myLevels = new int[5];
         nn = new NeuralNetwork();
         gameData = new AgentData();
-        
     }
     public void train(Hero agent, World world)
     {
