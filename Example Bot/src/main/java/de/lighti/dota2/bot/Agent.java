@@ -20,7 +20,7 @@ public class Agent extends BaseBot {
         ENABLED, DISABLED
     }
 
-    private static final String MY_HERO_NAME = "npc_dota_hero_lina";
+    private static final String MY_HERO_NAME = "npc_dota_hero_sniper";
 
     private static float distance( BaseEntity a, BaseEntity b ) {
         final float[] posA = a.getOrigin();
@@ -56,7 +56,7 @@ public class Agent extends BaseBot {
     public void train(Hero agent, World world)
     {
     	
-    	float[] data = gameData.parseGameState(agent,  world);
+    	float[] data = gameData.parseGameState(agent, world);
     	//set inputs of neural network
     	nn.setInputs(data);
         
