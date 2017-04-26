@@ -11,7 +11,16 @@ import java.util.ArrayList;
 
 public class NeuralNetwork {
 	public Graph graph;
-	public ArrayList<Float> inputs;
+	public ArrayList<Float> inputs = new ArrayList<Float>();
+	
+	public void setInputs(float[] input)  
+	{
+		inputs.clear();
+		for (int i = 0; i < input.length; i++){
+			System.out.println(input[i]);
+			inputs.add(input[i]);
+		}
+	}
 	public NeuralNetwork(){
         // test tensorflow
         try (Graph g = new Graph()) 

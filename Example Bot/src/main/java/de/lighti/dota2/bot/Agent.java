@@ -46,8 +46,9 @@ public class Agent extends BaseBot {
     private boolean shouldSellTango;
     private NeuralNetwork nn;
     private AgentData gameData;
+    
     public Agent() {
-        System.out.println( "Creating Lina" );
+        System.out.println( "Creating Agent" );
         myLevels = new int[5];
         nn = new NeuralNetwork();
         gameData = new AgentData();
@@ -56,10 +57,11 @@ public class Agent extends BaseBot {
     public void train(Hero agent, World world)
     {
     	
-    	gameData.parseGameState(agent,  world);
+    	float[] data = gameData.parseGameState(agent,  world);
+    	//set inputs of neural network
+    	nn.setInputs(data);
         
-        //Not sure how to package all of this information
-        //TODO: do ^ this here
+        
         
     }
     
@@ -82,7 +84,7 @@ public class Agent extends BaseBot {
         else if (myLevels[4] < 10) {
             LEVELUP.setAbilityIndex( 4 );
         }
-        System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
+        //System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
         return LEVELUP;
     }
 

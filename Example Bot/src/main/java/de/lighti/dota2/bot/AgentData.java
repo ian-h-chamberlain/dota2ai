@@ -14,6 +14,7 @@ import se.lu.lucs.dota2.framework.game.World;
 
 public class AgentData {
 	float hp, mp, range, gold, level;
+	float[] pos;
 	List<Float> abilityDamages;
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
@@ -23,9 +24,8 @@ public class AgentData {
 		abilityDamages = new ArrayList<Float>();
 		coolDowns = new ArrayList<Float>();
 		enemyDistances = new ArrayList<Float>();
-		
 	}
-	public void parseGameState(Hero agent, World world){
+	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
     	//health and mp are float percentages.
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
@@ -33,16 +33,18 @@ public class AgentData {
     	range = agent.getAttackRange();
     	gold = (float)agent.getGold();
     	level = (float)agent.getLevel();
+    	pos = agent.getOrigin();
     	
-    	abilityDamages = new ArrayList<Float>();
-    	coolDowns = new ArrayList<Float>();
-    	enemyDistances = new ArrayList<Float>();
+		abilityDamages.clear();
+    	coolDowns.clear();
+    	enemyDistances.clear();
+    	
     	//Get a list of the first four abilities, the other indices are probably items.
-    	for (int i = 0; i < 4; i++){
+    	for (int i = 0; i < 4; i++)
+    	{
     		Ability a = agent.getAbilities().get(i);
     		abilityDamages.add((float)a.getAbilityDamage());
     		coolDowns.add((float)a.getCooldownTimeRemaining());
-    		//System.out.println(abilityDamages.get(i));
     	}
     	/*Map<Integer, Ability> map = agent.getAbilities();
     	for (Map.Entry<Integer, Ability> entry : map.entrySet())
@@ -63,14 +65,9 @@ public class AgentData {
         for (int i = 0; i < towers.size(); i++)
         {
         	current = towers.get(i);
-        	//System.out.println("Enemy + " + i);
-        	//System.out.println("Class of enemy tower " + current.getName());
-        	//System.out.println(current.getMaxHealth());
-        	//System.out.println(current.getHealth());
-        	//System.out.println(current.getName());
-        	//System.out.println(distance(current.getOrigin(), agent.getOrigin()));
         }
-		
+		float parsedData[] = { hp, mp, range, level, gold, pos[0], pos[1], pos[2] };
+		return parsedData;
 	}
     private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {
         final Set<BaseEntity> result = world.getEntities().values().stream().filter( e -> distance( center, e ) < range ).collect( Collectors.toSet() );
