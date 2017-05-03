@@ -53,7 +53,7 @@ public class Lina extends BaseBot {
     public Lina() {
         System.out.println( "Creating Lina" );
         myLevels = new int[5];
-        nn = new NeuralNetwork();
+        nn = new NeuralNetwork(5 /* TODO use actual action output*/);
         
     }
     public void train(Hero agent,World world)

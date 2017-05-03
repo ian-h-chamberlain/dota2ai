@@ -50,7 +50,8 @@ public class Agent extends BaseBot {
     public Agent() {
         System.out.println( "Creating Agent" );
         myLevels = new int[5];
-        nn = new NeuralNetwork();
+        nn = new NeuralNetwork(5 /*TODO number of actions */);
+        nn.runOnce();
         gameData = new AgentData();
     }
     public void train(Hero agent, World world)
