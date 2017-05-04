@@ -1,27 +1,27 @@
 package de.lighti.dota2.bot;
 
-import org.tensorflow.DataType;
 import org.tensorflow.Graph;
-import org.tensorflow.Operation;
-import org.tensorflow.Output;
 import org.tensorflow.Session;
-import org.tensorflow.Shape;
 import org.tensorflow.Tensor;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Random;
 
 public class NeuralNetwork {
 
 	// Tensorflow representation
 	Graph graph;
-	Output inputTensor;
-	Output optimizer;
 	Session tfSession;
 	
 	float[] inputs = {
 			0.0f, 1.0f, 2.0f, 0.5f,
 	};
 	float[] outputs;
+	
+	float gamma = 0.99f;
+	float epsilon = 0.1f;
 
 	public void setInputs(float[] input)  
 	{
@@ -31,61 +31,38 @@ public class NeuralNetwork {
 	public NeuralNetwork(int numOutputs){
 		
 		outputs = new float[numOutputs];
-
+		
 		graph = new Graph();
-		
-		// set up the initial inputs to the neural network
-		inputTensor = outputFromShape(
-				"inputTensor", "Placeholder",
-				Shape.make(1,  inputs.length),
-				DataType.FLOAT);
-		
-		// and create a variable to hold the weights
-		Output weightMatrix = outputFromShape(
-				"weights", "Variable",
-				Shape.make(inputs.length, outputs.length), // TODO: make a deep network
-				DataType.FLOAT);
 
-		Output wShape = constant("wShape", new int[]{inputs.length, outputs.length});
-		
-		// initialize with random values
-		Output rValues = unaryOp("RandomUniform", wShape, DataType.FLOAT);
-		assignVar(weightMatrix, rValues);
+		try {
+			// run our python graph generator first
+			ProcessBuilder pb = new ProcessBuilder("python", "src\\NeuralNetwork.py");
+			Process p = pb.start();
+			p.waitFor();
+			byte[] out = new byte[p.getInputStream().available()];
+			p.getInputStream().read(out);
+			System.out.print(new String(out));
+
+			// and read the results into our Tensorflow graph
+			File inFile = new File("neuralNetwork.graph");
+			byte[] results = Files.readAllBytes(inFile.toPath());
+
+			graph.importGraphDef(results);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 		
 		// initialize session
 		tfSession = new Session(graph);
-
-		// assign the variable to matrix
-		tfSession.runner().addTarget("weights")
-				.addTarget("RandomUniform")
-				.addTarget("assign")
-				.run();
 		
-		// multiply the matrix by the input weights
-		Output qOut = binaryOp("qOut", "MatMul", inputTensor, weightMatrix);
-
-		// find max q-value and return index
-		binaryOp("predict", "ArgMax", qOut, constant("1", 1));
-
-		
-		// TRAINING COMPONENTS
-		Output nextQ = outputFromShape(
-				"nextQ", "Placeholder",
-				Shape.make(1, outputs.length),
-				DataType.FLOAT);
-		
-		// calculate the squared difference between nextQ and qOut
-		Output difference = binaryOp(
-				"sub", "Sub",
-				nextQ, qOut);
-		
-		Output squared = unaryOp("Square", difference);
-		
-		Output numDims = constant("dims", squared.shape().numDimensions());
-		Output lossFunction = binaryOp(
-				"sum", "Sum", squared, numDims);
-		
-		// TODO figure out how to get a gradient descent optimizer
+		// Assign all variables in the graph
+		tfSession.runner()
+			.addTarget("weights")
+			.addTarget("randomUniform")
+			.addTarget("assign")
+			.run();
 	}
 	
 	// Run a series of fake iterations to test Q-learning
@@ -93,55 +70,92 @@ public class NeuralNetwork {
 	{
 		// not actually using real input yet
 		setInputs(new float[]{
-			0.5f, 1.5f, -0.5f, 1.0f,
+			1.0f, 1.5f, -0.5f, 1.0f,
 		});
-		
-		float gamma = 0.99f;
+		Random rn = new Random();
 		
 		for (int i=0; i<iters; i++)
 		{
 			int act = getAction();
+			
+			if (rn.nextFloat() < epsilon)
+			{
+				act = rn.nextInt(outputs.length);
+			}
+			
 			float[] targetQ = getQ();
-			float r = fakeReward(act);
 			
 			// set new state based on action
-			if (act == 1)
-				inputs[0] += 0.1f;
-			else if (act == 2)
-				inputs[0] -= 0.1f;
+			if (act == 0)
+				inputs[0] += 0.01f;
+			else if (act == 1)
+				inputs[0] -= 0.01f;
+
+			float r = fakeReward(act);
 			
-			// and get the next q-value and action
-			float[] newQ = getQ(); 
-			int maxQIndex = getAction();
-			
-			// find maxQ of new state
-			float maxQ = newQ[maxQIndex];
-			
-			// update new q-values
-			targetQ[act] = r + gamma * maxQ;
-			
-			// TODO propagate the new q-values back through the network
+			propagateReward(targetQ, act, r);
 		}
+		
+		System.out.print("[");
+		for (int i=0; i<inputs.length; i++)
+		{
+			System.out.print(inputs[i] + ",");
+		}
+		System.out.println("]");
 	}
 	
 	private float fakeReward(int action)
 	{
-		if (action == 1)
+		if (action == 0)
 		{
-			if (inputs[0] < 4.0f)
-				return 100;
+			if (inputs[0] <= 1.0f)
+				return 10;
 			else
-				return -100;
+				return -10;
 		}
-		else if (action == 2)
+		else if (action == 1)
 		{
-			if (inputs[0] > 4.0f)
-				return 100;
+			if (inputs[0] >= 1.0f)
+				return 10;
 			else
-				return -100;
+				return -10;
 		}
 		else
 			return 0;
+	}
+	
+	// After taking an action, back propagate the reward for that action based on a new state
+	public void propagateReward(int action, float reward, float[] newInputs)
+	{
+		float[] targetQ = getQ();
+		setInputs(newInputs);
+		propagateReward(targetQ, action, reward);
+	}
+	
+	// helper function for back-propagation
+	private void propagateReward(float[] targetQ, int action, float reward)
+	{
+		// and get the next q-value and action
+		float[] newQ = getQ(); 
+		int maxQIndex = getAction();
+		
+		// find maxQ of new state
+		float maxQ = newQ[maxQIndex];
+		
+		// update new q-values
+		targetQ[action] = reward + gamma * maxQ;
+		
+		// now run the update model to back-propagate reward
+		Tensor in = Tensor.create(new float[][]{inputs});
+
+		tfSession.runner()
+			.feed("inputs1", in)
+			.feed("nextQ", Tensor.create(targetQ))
+			.addTarget("updateModel")
+			.addTarget("weights")
+			.run();
+		
+		// TODO reduce epsilon over iterations
 	}
 	
 	// Helper to pass inputs directly to the run method
@@ -152,13 +166,13 @@ public class NeuralNetwork {
 	}
 	
 	// Execute one iteration of the algorithm
-	public int getAction()
+	private int getAction()
 	{
 		Tensor in = Tensor.create(new float[][]{inputs});
 
 		// run network forward and get a prediction
 		List<Tensor> output = tfSession.runner()
-				.feed(inputTensor, in)
+				.feed("inputs1", in)
 				.fetch("predict")	// and index of highest
 				.run();
 		
@@ -175,14 +189,14 @@ public class NeuralNetwork {
 		return getQ();
 	}
 	
-	public float[] getQ()
+	private float[] getQ()
 	{
 		Tensor in = Tensor.create(new float[][]{inputs});
 
 		float[][] newQ = new float[1][outputs.length];
 
 		tfSession.runner()
-				.feed(inputTensor, in)
+				.feed("inputs1", in)
 				.fetch("qOut")
 				.run()
 				.get(0)
@@ -196,63 +210,4 @@ public class NeuralNetwork {
 		
 		return newQ[0];
 	}
-	
-	//Convenience function for creating operations.
-    private Output constant(String name, Object value) {
-        try (Tensor t = Tensor.create(value)) {
-          return graph.opBuilder("Const", name)
-              .setAttr("dtype", t.dataType())
-              .setAttr("value", t)
-              .build()
-              .output(0);
-        }
-      }
-
-    // Helper function to get an Output from two inputs
-    private Output binaryOp(String name, String type, Output in1, Output in2) 
-    {
-          return graph.opBuilder(type, name)
-        		  .addInput(in1)
-        		  .addInput(in2)
-        		  .build()
-        		  .output(0);
-    }
-    
-    // Helper function to assign Variable Outputs
-    private Operation assignVar(Output ref, Output value)
-    {
-    	return graph.opBuilder("Assign", "assign")
-    			.addInput(ref)
-    			.addInput(value)
-    			.setAttr("validate_shape", true)
-    			.build();
-    }
-    
-    // Helper function for general shape-based Outputs
-    private Output outputFromShape(String name, String type, Shape shape, DataType dtype)
-    {
-    	return graph.opBuilder(type, name)
-    			.setAttr("shape", shape)
-    			.setAttr("dtype", dtype)
-    			.build()
-    			.output(0);
-    }
-    
-    // Helper function for unary Outputs
-    private Output unaryOp(String type, Output in, DataType dtype)
-    {
-    	return graph.opBuilder(type, type)
-    			.addInput(in)
-    			.setAttr("dtype", dtype)
-    			.build()
-    			.output(0);
-    }
-
-    private Output unaryOp(String type, Output in)
-    {
-    	return graph.opBuilder(type, type)
-    			.addInput(in)
-    			.build()
-    			.output(0);
-    }
 }
