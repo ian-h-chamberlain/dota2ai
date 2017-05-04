@@ -4,8 +4,11 @@ import org.tensorflow.Graph;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -14,37 +17,53 @@ public class NeuralNetwork {
 	// Tensorflow representation
 	Graph graph;
 	Session tfSession;
+	int numLayers = 1;
 	
-	float[] inputs = {
-			0.0f, 1.0f, 2.0f, 0.5f,
-	};
+	float[] inputs;
 	float[] outputs;
 	
 	float gamma = 0.99f;
 	float epsilon = 0.1f;
 
-	public void setInputs(float[] input)  
-	{
-		inputs = input;
-	}
-	
-	public NeuralNetwork(int numOutputs){
+	public NeuralNetwork(int numInputs, int numOutputs){
 		
 		outputs = new float[numOutputs];
+		inputs = new float[numInputs];
 		
 		graph = new Graph();
+		
+		String graphFile = "neuralNetwork.graph";
 
 		try {
 			// run our python graph generator first
-			ProcessBuilder pb = new ProcessBuilder("python", "src\\NeuralNetwork.py");
+			ProcessBuilder pb = new ProcessBuilder(
+					"python", "src\\NeuralNetwork.py",
+					"" + numLayers, "" + inputs.length, "" + outputs.length,
+					graphFile);
+
+			System.out.println("*** GRAPH GENERATOR RUNNING ***\n");
 			Process p = pb.start();
 			p.waitFor();
-			byte[] out = new byte[p.getInputStream().available()];
-			p.getInputStream().read(out);
-			System.out.print(new String(out));
 
-			// and read the results into our Tensorflow graph
-			File inFile = new File("neuralNetwork.graph");
+			// show output from error stream
+			BufferedReader bf = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			String line;
+			while ((line = bf.readLine()) != null)
+			{
+				System.out.println(line);
+			}
+			
+			// and input stream
+			bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			while ((line = bf.readLine()) != null)
+			{
+				System.out.println(line);
+			}
+
+			System.out.println("\n*** GRAPH GENERATOR COMPLETE ***");
+
+			// finally, read the results into our Tensorflow graph
+			File inFile = new File(graphFile);
 			byte[] results = Files.readAllBytes(inFile.toPath());
 
 			graph.importGraphDef(results);
@@ -63,6 +82,11 @@ public class NeuralNetwork {
 			.addTarget("randomUniform")
 			.addTarget("assign")
 			.run();
+	}
+
+	public void setInputs(float[] input)  
+	{
+		inputs = input;
 	}
 	
 	// Run a series of fake iterations to test Q-learning
@@ -149,7 +173,7 @@ public class NeuralNetwork {
 		Tensor in = Tensor.create(new float[][]{inputs});
 
 		tfSession.runner()
-			.feed("inputs1", in)
+			.feed("inputs", in)
 			.feed("nextQ", Tensor.create(targetQ))
 			.addTarget("updateModel")
 			.addTarget("weights")
@@ -172,7 +196,7 @@ public class NeuralNetwork {
 
 		// run network forward and get a prediction
 		List<Tensor> output = tfSession.runner()
-				.feed("inputs1", in)
+				.feed("inputs", in)
 				.fetch("predict")	// and index of highest
 				.run();
 		
@@ -196,7 +220,7 @@ public class NeuralNetwork {
 		float[][] newQ = new float[1][outputs.length];
 
 		tfSession.runner()
-				.feed("inputs1", in)
+				.feed("inputs", in)
 				.fetch("qOut")
 				.run()
 				.get(0)

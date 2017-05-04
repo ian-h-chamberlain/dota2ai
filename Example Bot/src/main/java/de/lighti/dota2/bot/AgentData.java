@@ -23,6 +23,7 @@ public class AgentData {
 	List<Float> enemyDistances;
 	HashMap<String, Float> towerDistances;
 	
+	public int stateSize = 8; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
