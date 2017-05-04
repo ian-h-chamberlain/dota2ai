@@ -2,8 +2,10 @@ package de.lighti.dota2.bot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import se.lu.lucs.dota2.framework.game.Ability;
@@ -20,6 +22,46 @@ public class AgentData {
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
 	HashMap<String, Float> towerDistances;
+	
+	
+	public Set<BaseEntity> enemyHeroes;
+	public Set<BaseEntity> friendlyHeroes;
+	public Set<BaseEntity> enemyTurrets;
+	public Set<BaseEntity> friendlyTurrets;
+	public Set<BaseEntity> enemyCreeps;
+	public Set<BaseEntity> friendlyCreeps;
+	
+	public final String heroName = "hero";
+	public final String creepName = "creep";
+	public final String turretName = "tower";
+/*	
+	public Set<BaseEntity> getAllEnemies(){
+		
+		return new HashSet<BaseEntity>(enemyHeroes);//.addAll(enemyHeroes);
+	}
+	*/
+	/*
+	public Set<BaseEntity> getUnitsByPredicate(World world, BaseEntity center, float range, Predicate<Object> predicate){
+		Predicate<BaseEntity> p1 = (p -> p instanceof BaseNPC);
+		Set<BaseEntity> entities = findEntitiesInRange( world, center, range).stream().filter(p1).filter(predicate).collect( Collectors.toSet() );
+		return entities;
+	}*/
+	
+	public Set<BaseEntity> getUnitsByKeyword(World world, BaseEntity center, float range, int team, String keyWord){
+		Predicate<BaseEntity> p1 = (p -> p instanceof BaseNPC && ((BaseNPC)p).getTeam() == team && ((BaseNPC)p).getName().contains(keyWord));
+		Set<BaseEntity> entities = findEntitiesInRange( world, center, range).stream().filter(p1).collect( Collectors.toSet() );
+		return entities;
+	}
+	
+	public void populate(Hero agent, World world){
+		enemyHeroes = getUnitsByKeyword(world,agent,range,3,heroName);
+		friendlyHeroes = getUnitsByKeyword(world,agent,range,2,heroName);
+		enemyTurrets = getUnitsByKeyword(world,agent,range,3,turretName);
+		friendlyTurrets = getUnitsByKeyword(world,agent,range,2,turretName);
+		enemyCreeps = getUnitsByKeyword(world,agent,range,3,creepName);
+		friendlyCreeps = getUnitsByKeyword(world,agent,range,2,creepName);
+	}
+	
 	
 	public AgentData()
 	{
