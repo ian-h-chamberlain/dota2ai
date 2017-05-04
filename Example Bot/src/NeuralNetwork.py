@@ -3,11 +3,14 @@ import numpy as np
 
 tf.reset_default_graph()
 
+# TODO create arguments for number of layers, number of inputs, outputs
+
 #These lines establish the feed-forward part of the network used to choose actions
 inputs1 = tf.placeholder(shape=[1,4],dtype=tf.float32, name="inputs1")
 
 W = tf.Variable(tf.zeros([4, 3]), name="weights")
 
+# need to explicitly assign so we can initialize in Java
 tf.assign(W, tf.random_uniform(
         [4, 3], 0, 0.01, name="randomUniform"
         ), name="assign")
@@ -23,7 +26,7 @@ updateModel = trainer.minimize(loss, name="updateModel")
 
 graphRep = tf.get_default_graph().as_graph_def()
 
-f = open('neuralNetwork.graph', 'wb')
+f = open("neuralNetwork.graph", "wb")
 
 f.write(graphRep.SerializeToString())
 
