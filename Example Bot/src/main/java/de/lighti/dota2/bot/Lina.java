@@ -23,6 +23,7 @@ public class Lina extends BaseBot {
     private enum Mode {
         ENABLED, DISABLED
     }
+    
 
     private static final String MY_HERO_NAME = "npc_dota_hero_lina";
 
@@ -90,9 +91,6 @@ public class Lina extends BaseBot {
         {
         	current = enemies.get(i);
         	System.out.println("Enemy + " + i);
-        	//System.out.println(current.getMaxHealth());
-        	//System.out.println(current.getHealth());
-        	//System.out.println(current.getName());
         	System.out.println(distance(current.getOrigin(), agent.getOrigin()));
         }
         

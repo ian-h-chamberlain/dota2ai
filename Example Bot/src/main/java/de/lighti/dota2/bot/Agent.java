@@ -68,7 +68,9 @@ public class Agent extends BaseBot {
     @Override
     public LevelUp levelUp() {
         LEVELUP.setAbilityIndex( -1 );
-
+        if(null != LEVELUP){
+        	System.out.println("hi");
+        }
         if (myLevels[0] < 4) {
             LEVELUP.setAbilityIndex( 0 );
         }
@@ -122,6 +124,7 @@ public class Agent extends BaseBot {
     @Override
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
+
         if (shouldBuyTango) {
             shouldBuyTango = false;
             return buy( "item_tango" );
@@ -155,22 +158,35 @@ public class Agent extends BaseBot {
 //            myLevels[a.getAbilityIndex()] = a.getLevel();
 //            System.out.println( a );
 //        }
+        gameData.populate(agent, world);
+        
+        
         if (agent.getHealth() <= agent.getMaxHealth() * 0.4) {
             return retreat( world );
         }
 
-        final float range = agent.getAttackRange();
+        final float range = agent.getAttackRange();/*
         final Set<BaseEntity> e = findEntitiesInRange( world, agent, range ).stream().filter( p -> p instanceof BaseNPC )
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-        
+        */
         //Train agent on update
         train(agent, world);
-
+        Set<BaseEntity> e = gameData.enemyHeroes;
         if (!e.isEmpty()) {
             return attack( agent, e, world );
         }
         else {
-            return move( agent, world );
+        	e = gameData.enemyTurrets;
+        	if(!e.isEmpty()){
+        		return attack(agent, e, world);
+        	}else{
+        		e = gameData.enemyTurrets;
+        		if(!e.isEmpty()){
+        			return attack(agent,e,world);
+        		}
+
+                return move( agent, world );
+        	}
         }
     }
 
