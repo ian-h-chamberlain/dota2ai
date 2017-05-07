@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fi.iki.elonen.NanoHTTPD;
+import se.lu.lucs.dota2.framework.bot.BaseBot;
 import se.lu.lucs.dota2.framework.bot.Bot;
 import se.lu.lucs.dota2.framework.bot.Bot.Command;
 import se.lu.lucs.dota2.framework.bot.BotCommands.LevelUp;
@@ -41,6 +43,8 @@ public class Dota2AIService extends NanoHTTPD {
     private final static String APPLICATION_JSON = "application/json";
 
     private final static String CONTENT_TYPE = "content-type";
+
+	ReentrantLock lock = new ReentrantLock();
 
     static {
         MAPPER.configure( Feature.AUTO_CLOSE_SOURCE, false );
@@ -209,9 +213,16 @@ public class Dota2AIService extends NanoHTTPD {
     }
 
     private Response update( IHTTPSession session ) throws IOException {
-        final World world = MAPPER.readValue( session.getInputStream(), World.class );
-        listeners.stream().forEach( l -> l.update( world ) );
-        final Command c = bot.update( world );
-        return buildJSONResponse( c );
+    	if(lock.tryLock()){
+    		final World world = MAPPER.readValue( session.getInputStream(), World.class );
+    		listeners.stream().forEach( l -> l.update( world ) );
+    		final Command c = bot.update( world );
+    		System.out.println("ending update");
+    		lock.unlock();
+    		return buildJSONResponse( c );
+    	}else{
+    		System.err.println("ERROR THE LOCK IS ALREADY IN USE");
+    		return buildJSONResponse(BaseBot.NOOP);
+    	}
     }
 }

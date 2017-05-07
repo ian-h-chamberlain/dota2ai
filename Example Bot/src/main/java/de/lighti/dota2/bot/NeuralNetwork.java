@@ -226,6 +226,7 @@ public class NeuralNetwork {
 				.get(0)
 				.copyTo(newQ);
 		
+		System.out.print("Q: ");
 		for (int i=0; i<outputs.length; i++)
 		{
 			System.out.print(newQ[0][i] + ",");
