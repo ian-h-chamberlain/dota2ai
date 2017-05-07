@@ -20,14 +20,20 @@ public class UtilityScorer {
 	float[] lastPos;
 	public float[] currentMode;
 	public enum Constants{
-		sittingStill,enemyTurretMultiplier,enemyMinionInRange,enemyHeroMultiplier,alliedHeroMultiplier,alliedMinionMulitplier,alliedTurretMultiplier,preferredX,preferredY,preferredMult
+		sittingStill,enemyTurretMultiplier,enemyMinionInRange,enemyHeroMultiplier,alliedHeroMultiplier,alliedMinionMulitplier,alliedTurretMultiplier,
+		preferredX,preferredY, preferredMult,dist,stickiness
 	}
-	public static final float[] farm = new float[]{-300,20,1000,2,-1,-2,0, 0,0 ,-.0001f};
-	public static final float[] followMinions = new float[]{0,0,0,0,0,-1,0, -1000,-1000 ,-.0001f};
-	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,-.0001f};
+	public static final float[] farm = new float[]{-1000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,-.05f,0};
+
+	public static final float[] laneSwitch = new float[]{-2000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,.05f,1500};
+	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,-.0001f,-.05f};
 	public static final float[] guard = new float[]{0,5,1000,-5,-2,0,-5, -6000,-6000 ,-.0001f};
 
-	public static final float[] brawl = new float[]{-300,2,1000,-5,-1,-2,0, 0,0 ,0};
+	public static final float[] brawl = new float[]{-300,2,1000,-5,-1,-2,0, 0,0 ,-.0001f,-.05f,0};
+	
+	public static final float[] gank = new float[]{-1000,10,0,-5,-1,0,0, 0,0 ,0,0,-1};
+
+	public static final float[] siege = new float[]{-1000,1,0,2,-5,-5,0, 0,0 ,-.0001f,-.05f,0};
 	
 	public UtilityScorer(AgentData d){
 		data = d;
@@ -63,6 +69,7 @@ public class UtilityScorer {
 			//System.out.println("Trying point " + positions.get(i)[0] + positions.get(i)[1]);
 		}
 		//System.out.println("Returning " + Vec3.str(bestPos) + " with score: " + score);
+		lastPos = data.pos;
 		currentDest = bestPos;
 		return bestPos;
 		
@@ -89,7 +96,7 @@ public class UtilityScorer {
 		float ehScore = 0; 
 		float amScore = 0;
 		float ahScore = 0;*/
-		float sitScore = Vec3.distance(pos, data.pos) < epsilon ? currentMode[(int)Constants.sittingStill.ordinal()] : 0;
+		float sitScore = Vec3.distance(lastPos, pos) < epsilon ? currentMode[(int)Constants.sittingStill.ordinal()] : 0;
 		float etScore = currentMode[Constants.enemyTurretMultiplier.ordinal()] * 
 				clamp(distToEntity(enemyTurret,pos),0,towerRange);
 		
@@ -106,11 +113,12 @@ public class UtilityScorer {
 				clamp(distToEntity(allyTurret,pos),0,data.range);	
 		float preferredPointScore = currentMode[Constants.preferredMult.ordinal()] * Vec3.distance(pos, 
 				new float[]{currentMode[Constants.preferredX.ordinal()],currentMode[Constants.preferredY.ordinal()]});
+		float distScore = currentMode[Constants.dist.ordinal()] * Vec3.distance(pos, data.pos);
 		//if(allyHero != null){
+		float stickinessScore = Vec3.equals(this.currentDest,pos) ? currentMode[Constants.stickiness.ordinal()] : 0;
+		//System.out.println("SittingStill: " + sitScore + " et: " + etScore + " em: "  + +emScore + " eh: " + ehScore+ " am: " +amScore+ "ah: " +ahScore + " at: " + atScore + " dist: " + distScore + " pp: " + preferredPointScore + "Trying point: " + Vec3.str(pos) + " dist: " + Vec3.distance(pos,data.pos));
 		
-		//System.out.println("SittingStill: " + sitScore + " et: " + etScore + " em: "  + +emScore + " eh: " + ehScore+ " am: " +amScore+ "ah: " +ahScore + " at: " + atScore + " pp: " + preferredPointScore + "Trying point: " + Vec3.str(pos) + " dist: " + Vec3.distance(pos,data.pos));
-		
-		return sitScore+etScore+emScore+ehScore+amScore+ahScore + atScore + preferredPointScore;
+		return sitScore+etScore+emScore+ehScore+amScore+ahScore + atScore +distScore + stickinessScore+ preferredPointScore;
 	}
 	
 	public static float clamp(float val,float min,float max){
