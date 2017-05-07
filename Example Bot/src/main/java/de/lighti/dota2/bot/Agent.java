@@ -1,5 +1,6 @@
 package de.lighti.dota2.bot;
 
+import java.util.Arrays;
 import java.util.Random;
 import java.lang.System;
 import java.util.Set;
@@ -47,17 +48,26 @@ public class Agent extends BaseBot {
     private boolean shouldSellTango;
     private NeuralNetwork nn;
     private AgentData gameData;
+
     private UtilityScorer scorer;
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
     private long lastTime = 0;
-    private static final boolean useTensor = false;
+    private static final boolean useTensor = true;
+
+    int lastAction;
+    float lastReward;
+    
+    private float lastHP = 0;
     
     public Agent() {
         System.out.println( "Creating Agent" );
         myLevels = new int[5];
+
         
         ///////NOTE: SOME INITIALIZATION IS DONE IN UPDATE BECAUSE OF DEPENDENCIES ON THE INGAME WORLD.
+
+
     }
     public void train(Hero agent, World world)
     {
@@ -66,11 +76,34 @@ public class Agent extends BaseBot {
     	}
     	float[] data = gameData.parseGameState(agent, world);
 
+    	// update the network with the previous reward and new state
+    	nn.propagateReward(lastAction, lastReward, data);
+    	
         System.out.println("nn: " + nn);
-    	//set inputs of neural network
-    	nn.setInputs(data);
+    	
+        //set inputs of neural network and get new q-values
         
-        
+    	float[] outputs = nn.getQ(data);
+
+    	lastReward = 0f;
+    	// outputs[0] = retreat
+    	if (outputs[0] > outputs[1])
+    	{
+    		lastAction = 0;
+    		scorer.currentMode = UtilityScorer.backOff;
+    		
+    		if (data[0] < lastHP)
+    			lastReward = data[0] - lastHP;
+    	}
+    	else {
+    		lastAction = 1;
+    		scorer.currentMode = UtilityScorer.brawl;
+    		
+    		if (data[0] < lastHP)
+    			lastReward = data[0] - lastHP;
+    	}
+
+    	lastHP = data[0];
     }
     
     @Override
@@ -168,7 +201,7 @@ public class Agent extends BaseBot {
         	gameData = new AgentData(agent);
         	scorer = new UtilityScorer(gameData);
         	if(useTensor){
-        		nn = new NeuralNetwork(gameData.stateSize, 3);
+        		nn = new NeuralNetwork(gameData.stateSize, 2);
         	}
             System.out.println("nn: " + nn);
         }
@@ -182,6 +215,7 @@ public class Agent extends BaseBot {
         }
         /*
         if (agent.getHealth() <= agent.getMaxHealth() * 0.4) {
+
             return retreat( world );
         }*/
 
