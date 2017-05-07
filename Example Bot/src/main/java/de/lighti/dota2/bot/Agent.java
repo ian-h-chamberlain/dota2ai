@@ -7,20 +7,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import se.lu.lucs.dota2.framework.bot.BaseBot;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Attack;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Buy;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Cast;
 import se.lu.lucs.dota2.framework.bot.BotCommands.LevelUp;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Move;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Noop;
 import se.lu.lucs.dota2.framework.bot.BotCommands.Select;
-import se.lu.lucs.dota2.framework.bot.BotCommands.Sell;
-import se.lu.lucs.dota2.framework.game.Ability;
 import se.lu.lucs.dota2.framework.game.BaseEntity;
-import se.lu.lucs.dota2.framework.game.BaseNPC;
 import se.lu.lucs.dota2.framework.game.ChatEvent;
 import se.lu.lucs.dota2.framework.game.Hero;
-import se.lu.lucs.dota2.framework.game.Tower;
 import se.lu.lucs.dota2.framework.game.World;
 
 public class Agent extends BaseBot {
@@ -30,38 +21,17 @@ public class Agent extends BaseBot {
 
     private static final String MY_HERO_NAME = "npc_dota_hero_sniper";
 
-    private static float distance( BaseEntity a, BaseEntity b ) {
-        final float[] posA = a.getOrigin();
-        final float[] posB = b.getOrigin();
-        return distance( posA, posB );
-    }
-
-    private static float distance( float[] posA, float[] posB ) {
-        return (float) Math.hypot( posB[0] - posA[0], posB[1] - posA[1] );
-    }
-//
-//    private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {
-//        final Set<BaseEntity> result = world.getEntities().values().stream().filter( e -> distance( center, e ) < range ).collect( Collectors.toSet() );
-//        result.remove( center );
-//        return result;
-//    }
 
     private int[] myLevels;
 
     private Mode mode = Mode.ENABLED;
-    private boolean shouldRetreat;
-    private boolean shouldBuyTango;
-    private boolean shouldSellTango;
     private NeuralNetwork nn;
     private AgentData gameData;
 
     private UtilityScorer scorer;
-    private static final long attackAnimDelay = 200;
-    private static long attackDelay = 1300;
-    private long lastTime = 0;
     Action actionController;
 
-    private static final boolean useTensor = true;
+    private static final boolean useTensor = false;
     int lastAction;
     float lastReward;
     
@@ -159,7 +129,7 @@ public class Agent extends BaseBot {
         else if (myLevels[4] < 10) {
             LEVELUP.setAbilityIndex( 4 );
         }
-        //System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
+        System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
         return LEVELUP;
     }
 
@@ -169,7 +139,7 @@ public class Agent extends BaseBot {
             case "lina go":
                 mode = Mode.ENABLED;
                 break;
-            case "lina stop":
+/*            case "lina stop":
                 shouldRetreat = true;
                 mode = Mode.DISABLED;
                 break;
@@ -178,7 +148,7 @@ public class Agent extends BaseBot {
                 break;
             case "lina buy tango":
                 shouldBuyTango = true;
-                break;
+                break;*/
         }
     }
 
@@ -199,32 +169,7 @@ public class Agent extends BaseBot {
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
 
-    	/*
-=======
-    	System.out.println("Starting update");
->>>>>>> 93e9dce9ec1e8b6187f83dbbb2fc44e320e9620c
-        if (shouldBuyTango) {
-            shouldBuyTango = false;
-            return buy( "item_tango" );
-        }
-        if (shouldSellTango) {
-            shouldSellTango = false;
-            return sell(0 );
-        }
-        
-        if (mode == Mode.DISABLED) {
-            if (shouldRetreat) {
-                shouldRetreat = false;
-                return retreat( world );
-            }
-
-            return NOOP;
-        }*/
-
-//        System.out.println( world.getEntities().size() + " present" );
-//        world.getEntities().values().stream().filter( e -> e.getClass() == Building.class ).forEach( e -> System.out.println( e ) );
-//        world.getEntities().values().stream().filter( e -> e.getClass() == Tower.class ).forEach( e -> System.out.println( e ) );
-        final int myIndex = world.searchIndexByName( MY_HERO_NAME );
+    	final int myIndex = world.searchIndexByName( MY_HERO_NAME );
         if (myIndex < 0) {
             //I'm probably dead
             //System.out.println( "I'm dead?" );
@@ -251,7 +196,7 @@ public class Agent extends BaseBot {
         if(useTensor){
         	train(agent, world);
         }
-        return actionController.update(agent, world, scorer, lastTime, attackAnimDelay, attackDelay, gameData);
+        return actionController.update(agent, world, scorer);
     }
 
 }
