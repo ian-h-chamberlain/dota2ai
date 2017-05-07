@@ -51,19 +51,19 @@ public class Agent extends BaseBot {
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
     private long lastTime = 0;
-    private static final boolean useTensor = false;
+    private static final boolean useTensor = true;
     
     public Agent() {
-        System.out.println( "Creating Agent" );
+        //System.out.println( "Creating Agent" );
         myLevels = new int[5];
         
         ///////NOTE: SOME INITIALIZATION IS DONE IN UPDATE BECAUSE OF DEPENDENCIES ON THE INGAME WORLD.
     }
     public void train(Hero agent, World world)
     {
-    	if(nn == null){
-    		return;
-    	}
+    	//if(nn == null){
+    	//	return;
+    	//}
     	float[] data = gameData.parseGameState(agent, world);
 
         System.out.println("nn: " + nn);
@@ -185,7 +185,8 @@ public class Agent extends BaseBot {
             return retreat( world );
         }*/
 
-        final float range = agent.getAttackRange();/*
+        //final float range = agent.getAttackRange();
+        /*
         final Set<BaseEntity> e = findEntitiesInRange( world, agent, range ).stream().filter( p -> p instanceof BaseNPC )
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
         */

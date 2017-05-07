@@ -5,3 +5,5 @@
 *.bin
 dota2ai/server_log.txt
 *.graph
+*.soc
+dota2ai/rich_presence_persistent_data.txt
