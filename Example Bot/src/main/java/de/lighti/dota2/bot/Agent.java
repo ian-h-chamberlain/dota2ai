@@ -53,7 +53,7 @@ public class Agent extends BaseBot {
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
     private long lastTime = 0;
-    private static final boolean useTensor = true;
+    private static final boolean useTensor = false;
     int lastAction;
     float lastReward;
     
@@ -188,7 +188,7 @@ public class Agent extends BaseBot {
     @Override
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
-    	System.out.println("Starting update");
+    	//System.out.println("Starting update");
         if (shouldBuyTango) {
             shouldBuyTango = false;
             return buy( "item_tango" );
@@ -316,7 +316,7 @@ public class Agent extends BaseBot {
           //              .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
         if (target == null) {
             //Nothing in range
-            System.out.println( "No enemy in range" );
+            //System.out.println( "No enemy in range" );
             return NOOP;
         }
 
@@ -328,7 +328,7 @@ public class Agent extends BaseBot {
             //Otherwise she just attacks
             final int targetindex = world.indexOf( target );
             ATTACK.setTarget( targetindex );
-            System.out.println( "Attacking" );
+            //System.out.println( "Attacking" );
 
             return ATTACK;
         }
@@ -353,14 +353,14 @@ public class Agent extends BaseBot {
         if (a.getAbilityDamageType() == Ability.DOTA_ABILITY_BEHAVIOR_POINT) {
             return NOOP;
         }
-        System.out.println( "will cast a spell" );
-        System.out.println( "Will try " + a.getName() );
+        //System.out.println( "will cast a spell" );
+        //System.out.println( "Will try " + a.getName() );
         if (a.getLevel() < 1) {
-            System.out.println( "Not learned yet" );
+        //    System.out.println( "Not learned yet" );
             return NOOP;
         }
         if (a.getCooldownTimeRemaining() > 0f) {
-            System.out.println( "On cooldown" );
+        //    System.out.println( "On cooldown" );
             return NOOP;
         }
         CAST.setAbility( index );

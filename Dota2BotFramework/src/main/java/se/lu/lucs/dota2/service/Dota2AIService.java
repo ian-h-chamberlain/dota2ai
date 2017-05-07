@@ -217,7 +217,7 @@ public class Dota2AIService extends NanoHTTPD {
     		final World world = MAPPER.readValue( session.getInputStream(), World.class );
     		listeners.stream().forEach( l -> l.update( world ) );
     		final Command c = bot.update( world );
-    		System.out.println("ending update");
+    		//System.out.println("ending update");
     		lock.unlock();
     		return buildJSONResponse( c );
     	}else{
