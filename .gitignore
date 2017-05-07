@@ -4,3 +4,4 @@
 *.vcss_c
 *.bin
 dota2ai/server_log.txt
+*.graph

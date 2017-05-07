@@ -24,6 +24,8 @@ public class AgentData {
 	HashMap<String, Float> towerDistances;
 	
 	BaseEntity owner;
+	public int stateSize = 8; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
 	public Set<BaseEntity> enemyTurrets;
