@@ -23,7 +23,7 @@ public class AgentData {
 	List<Float> enemyDistances;
 	HashMap<String, Float> towerDistances;
 	
-	
+	BaseEntity owner;
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
 	public Set<BaseEntity> enemyTurrets;
@@ -47,9 +47,22 @@ public class AgentData {
 		return entities;
 	}*/
 	
+	public static BaseEntity getNearest(Set<BaseEntity> set, float[] point){
+		float dist = Float.MAX_VALUE;
+		BaseEntity obj = null;
+		for(BaseEntity e : set){
+			float tdist = Vec3.distance(e.getOrigin(),point);
+			if(tdist < dist){
+				dist = tdist;
+				obj = e;
+			}
+		}
+		return obj;
+	}
+	
 	public Set<BaseEntity> getUnitsByKeyword(World world, BaseEntity center, float range, int team, String keyWord){
-		Predicate<BaseEntity> p1 = (p -> p instanceof BaseNPC && ((BaseNPC)p).getTeam() == team && ((BaseNPC)p).getName().contains(keyWord));
-		Set<BaseEntity> entities = findEntitiesInRange( world, center, range).stream().filter(p1).collect( Collectors.toSet() );
+		Predicate<BaseEntity> p1 = (p -> p instanceof BaseNPC && ((BaseNPC)p).getTeam() == team && ((BaseNPC)p).getName().contains(keyWord) && ((BaseNPC)p).getName() != owner.getName());
+		Set<BaseEntity> entities = findEntitiesInRange( world, center, range * 10).stream().filter(p1).collect( Collectors.toSet() );
 		return entities;
 	}
 	
@@ -60,11 +73,15 @@ public class AgentData {
 		friendlyTurrets = getUnitsByKeyword(world,agent,range,2,turretName);
 		enemyCreeps = getUnitsByKeyword(world,agent,range,3,creepName);
 		friendlyCreeps = getUnitsByKeyword(world,agent,range,2,creepName);
+//		System.out.println("found: " + enemyHeroes.size() + " enemyheroes " + "found: " + friendlyHeroes.size() + " enemyheroes " +
+//		"found: " + enemyTurrets.size() + " enemyTurrets " + "found: " + friendlyTurrets.size() + " friendlyTurrets " + 
+//		"found: " + enemyCreeps.size() + " enemyCreeps " + "found: " + friendlyCreeps.size() + " friendlyCreeps ");
 	}
 	
 	
-	public AgentData()
+	public AgentData(BaseEntity o)
 	{
+		owner = o;
 		hp = mp = range = gold = level = 0.0f;
 		abilityDamages = new ArrayList<Float>();
 		coolDowns = new ArrayList<Float>();

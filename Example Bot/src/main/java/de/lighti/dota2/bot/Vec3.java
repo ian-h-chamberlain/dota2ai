@@ -25,11 +25,35 @@ public class Vec3 {
 		return new float[]{vec[0] * coef, vec[1] * coef};
 	}
 	
+	public static boolean equals(float[] vec1, float[] vec2){
+		if(vec1 == vec2){
+			return true;
+		}
+		if(vec1 == null || vec2 == null || vec1.length != vec2.length){
+			return false;
+		}
+		if(vec1[0] == vec2[0] && vec1[1] == vec2[1]){
+			return true;
+		}
+		return false;
+	}
+	
+	public static String str(float[] vec){
+		String str = "(";
+		for(int i = 0; i < vec.length; i++){
+			str += vec[i] + ",";
+		}
+		str += ")";
+		return str;
+	}
+	
 	public static float[] randomPoint(float[] origin, float range){
 		if(rand == null){
 			rand = new Random();
-		}		
-		float[] point = new float[]{rand.nextFloat(),rand.nextFloat()};
-		return mult(normalized(point),range);
+		}
+		float dist = rand.nextFloat() * range;
+		float[] point = mult(normalized(new float[]{rand.nextFloat()-.5f,rand.nextFloat() -.5f}),dist);
+		//System.out.println(str(point));
+		return point;
 	}
 }

@@ -1,6 +1,7 @@
 package de.lighti.dota2.bot;
 
 import java.util.Random;
+import java.lang.System;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,13 +47,17 @@ public class Agent extends BaseBot {
     private boolean shouldSellTango;
     private NeuralNetwork nn;
     private AgentData gameData;
+    private UtilityScorer scorer;
+    private static final long attackAnimDelay = 170;
+    private static long attackDelay = 1300;
+    private long lastTime = 0;
     
     public Agent() {
         System.out.println( "Creating Agent" );
         myLevels = new int[5];
         nn = new NeuralNetwork(5 /*TODO number of actions */);
         nn.testQ(1);
-        gameData = new AgentData();
+        
     }
     public void train(Hero agent, World world)
     {
@@ -133,6 +138,7 @@ public class Agent extends BaseBot {
             shouldSellTango = false;
             return sell(0 );
         }
+        /*
         if (mode == Mode.DISABLED) {
             if (shouldRetreat) {
                 shouldRetreat = false;
@@ -140,7 +146,7 @@ public class Agent extends BaseBot {
             }
 
             return NOOP;
-        }
+        }*/
 
 //        System.out.println( world.getEntities().size() + " present" );
 //        world.getEntities().values().stream().filter( e -> e.getClass() == Building.class ).forEach( e -> System.out.println( e ) );
@@ -154,16 +160,21 @@ public class Agent extends BaseBot {
         }
 
         final Hero agent = (Hero) world.getEntities().get( myIndex );
+        if(gameData == null){
+        	//put the gamedata and score initializer here so it can access the agent. 
+        	gameData = new AgentData(agent);
+        	scorer = new UtilityScorer(gameData);
+        }
 //        for (final Ability a : lina.getAbilities().values()) {
 //            myLevels[a.getAbilityIndex()] = a.getLevel();
 //            System.out.println( a );
 //        }
         gameData.populate(agent, world);
         
-        
+        /*
         if (agent.getHealth() <= agent.getMaxHealth() * 0.4) {
             return retreat( world );
-        }
+        }*/
 
         final float range = agent.getAttackRange();/*
         final Set<BaseEntity> e = findEntitiesInRange( world, agent, range ).stream().filter( p -> p instanceof BaseNPC )
@@ -171,11 +182,59 @@ public class Agent extends BaseBot {
         */
         //Train agent on update
         train(agent, world);
+        
+        long t = System.currentTimeMillis();
+        if(t - lastTime < attackAnimDelay){
+        	System.out.println("anim. " + t + ", " + lastTime + ", " + attackAnimDelay);
+        	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
+            if (e != null) {
+            	System.out.println("attack");
+                return attack( agent, e, world );
+            }else {
+            	e = AgentData.getNearest(gameData.enemyHeroes, gameData.pos);
+            	if(e != null){
+            		System.out.println("attack");
+            		return attack(agent, e, world);
+            	}else{
+            		e = AgentData.getNearest(gameData.enemyTurrets, gameData.pos);
+            		if(e != null){
+            			System.out.println("attack");
+            			return attack(agent,e,world);
+            		}
+            		
+            	}
+            }
+        }
+        if(t - lastTime > attackDelay){
+        	System.out.println("attacking " + (t-lastTime));
+        	lastTime = t;
+        	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
+            if (e != null) {
+            	System.out.println("attack");
+                return attack( agent, e, world );
+            }else {
+            	e =  AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
+            	if(e != null){
+            		System.out.println("attack");
+            		return attack(agent, e, world);
+            	}else{
+            		e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
+            		if(e != null){
+            			System.out.println("attack");
+            			return attack(agent,e,world);
+            		}
+            		
+            	}
+            }
+        }
+        System.out.println("goto");
+        return goTo (scorer.getPoint(gameData.pos));//( agent, world );
+        //if()
+        /*
         Set<BaseEntity> e = gameData.enemyHeroes;
         if (!e.isEmpty()) {
             return attack( agent, e, world );
-        }
-        else {
+        }else {
         	e = gameData.enemyTurrets;
         	if(!e.isEmpty()){
         		return attack(agent, e, world);
@@ -184,16 +243,25 @@ public class Agent extends BaseBot {
         		if(!e.isEmpty()){
         			return attack(agent,e,world);
         		}
-
-                return move( agent, world );
+        		
         	}
-        }
+        }*/
+    }
+    
+    
+    
+    private Command goTo(float[] pos){
+    	//System.out.println(MOVE + " " + pos);
+    	MOVE.setX(pos[0]);
+    	MOVE.setY(pos[1]);
+    	MOVE.setZ(0);
+    	return MOVE;
     }
 
-    private Command attack( Hero lina, Set<BaseEntity> e, World world ) 
+    private Command attack( Hero lina, BaseEntity target, World world ) 
     {
-        final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
-                        .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
+        //final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
+          //              .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
         if (target == null) {
             //Nothing in range
             System.out.println( "No enemy in range" );
@@ -260,7 +328,7 @@ public class Agent extends BaseBot {
 
         return CAST;
     }
-
+/*
     private Command move( Hero lina, World world ) {
         //Walk up to the nearest enemy
         final Set<BaseEntity> en = findEntitiesInRange( world, lina, Float.POSITIVE_INFINITY ).stream().filter( p -> p instanceof BaseNPC )
@@ -283,7 +351,8 @@ public class Agent extends BaseBot {
 
         return MOVE;
     }
-
+*/
+    /*
     private Command retreat( World world ) {
         //Retreat at 30% health
         System.out.println( "Lina is retreating" );
@@ -295,5 +364,5 @@ public class Agent extends BaseBot {
         MOVE.setZ( targetPos[2] );
 
         return MOVE;
-    }
+    }*/
 }
