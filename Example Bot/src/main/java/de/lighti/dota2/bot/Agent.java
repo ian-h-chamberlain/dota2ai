@@ -7,8 +7,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import se.lu.lucs.dota2.framework.bot.BaseBot;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Attack;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Buy;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Cast;
 import se.lu.lucs.dota2.framework.bot.BotCommands.LevelUp;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Move;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Noop;
 import se.lu.lucs.dota2.framework.bot.BotCommands.Select;
+import se.lu.lucs.dota2.framework.bot.BotCommands.Sell;
 import se.lu.lucs.dota2.framework.game.Ability;
 import se.lu.lucs.dota2.framework.game.BaseEntity;
 import se.lu.lucs.dota2.framework.game.BaseNPC;
@@ -53,7 +59,9 @@ public class Agent extends BaseBot {
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
     private long lastTime = 0;
-    private static final boolean useTensor = false;
+    Action actionController;
+
+    private static final boolean useTensor = true;
     int lastAction;
     float lastReward;
     
@@ -66,6 +74,7 @@ public class Agent extends BaseBot {
         //	System.out.println("Building new game data");
         	//put the gamedata and score initializer here so it can access the agent. 
         gameData = new AgentData();
+        actionController = new Action(ATTACK, CAST, MOVE, NOOP, BUY, SELL, gameData);
         scorer = new UtilityScorer(gameData);
         if(useTensor){
         	System.out.println("creating neural network");
@@ -133,7 +142,7 @@ public class Agent extends BaseBot {
     public LevelUp levelUp() {
         LEVELUP.setAbilityIndex( -1 );
         if(null != LEVELUP){
-        	System.out.println("hi");
+        	//System.out.println("hi");
         }
         if (myLevels[0] < 4) {
             LEVELUP.setAbilityIndex( 0 );
@@ -174,7 +183,8 @@ public class Agent extends BaseBot {
     }
 
     @Override
-    public void reset() {
+    public void reset()
+    {
         System.out.println( "Resetting" );
         myLevels = new int[5];
     }
@@ -188,7 +198,11 @@ public class Agent extends BaseBot {
     @Override
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
-    	//System.out.println("Starting update");
+
+    	/*
+=======
+    	System.out.println("Starting update");
+>>>>>>> 93e9dce9ec1e8b6187f83dbbb2fc44e320e9620c
         if (shouldBuyTango) {
             shouldBuyTango = false;
             return buy( "item_tango" );
@@ -197,7 +211,7 @@ public class Agent extends BaseBot {
             shouldSellTango = false;
             return sell(0 );
         }
-        /*
+        
         if (mode == Mode.DISABLED) {
             if (shouldRetreat) {
                 shouldRetreat = false;
@@ -219,202 +233,25 @@ public class Agent extends BaseBot {
         }
 
         final Hero agent = (Hero) world.getEntities().get( myIndex );
-
-//        for (final Ability a : lina.getAbilities().values()) {
-//            myLevels[a.getAbilityIndex()] = a.getLevel();
-//            System.out.println( a );
-//        }
+        if(gameData == null)
+        {
+        	//put the gamedata and score initializer here so it can access the agent. 
+        	gameData = new AgentData();
+        	scorer = new UtilityScorer(gameData);
+        	if(useTensor){
+        		nn = new NeuralNetwork(gameData.stateSize, 3);
+        	}
+            System.out.println("nn: " + nn);
+        }
         gameData.populate(agent, world);
         if(!useTensor){
         	gameData.parseGameState(agent, world);
         }
-        /*
-        if (agent.getHealth() <= agent.getMaxHealth() * 0.4) {
-
-            return retreat( world );
-        }*/
-
-        //final float range = agent.getAttackRange();
-        /*
-        final Set<BaseEntity> e = findEntitiesInRange( world, agent, range ).stream().filter( p -> p instanceof BaseNPC )
-                        .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-        */
         //Train agent on update
         if(useTensor){
         	train(agent, world);
         }
-        
-        long t = System.currentTimeMillis();
-        if(t - lastTime < attackAnimDelay){
-        	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
-            if (e != null) {
-                return attack( agent, e, world );
-            }else {
-            	e = AgentData.getNearest(gameData.enemyHeroes, gameData.pos);
-            	if(e != null){
-            		return attack(agent, e, world);
-            	}else{
-            		e = AgentData.getNearest(gameData.enemyTurrets, gameData.pos);
-            		if(e != null){
-            			return attack(agent,e,world);
-            		}
-            		
-            	}
-            }
-        }
-        if(t - lastTime > attackDelay){
-        	lastTime = t;
-        	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
-            if (e != null) {
-                return attack( agent, e, world );
-            }else {
-            	e =  AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
-            	if(e != null){
-            		return attack(agent, e, world);
-            	}else{
-            		e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
-            		if(e != null){
-            			return attack(agent,e,world);
-            		}
-            		
-            	}
-            }
-        }
-        return goTo (scorer.getPoint(gameData.pos));//( agent, world );
-        //if()
-        /*
-        Set<BaseEntity> e = gameData.enemyHeroes;
-        if (!e.isEmpty()) {
-            return attack( agent, e, world );
-        }else {
-        	e = gameData.enemyTurrets;
-        	if(!e.isEmpty()){
-        		return attack(agent, e, world);
-        	}else{
-        		e = gameData.enemyTurrets;
-        		if(!e.isEmpty()){
-        			return attack(agent,e,world);
-        		}
-        		
-        	}
-        }*/
-    }
-    
-    
-    
-    private Command goTo(float[] pos){
-    	//System.out.println(MOVE + " " + pos);
-    	MOVE.setX(pos[0]);
-    	MOVE.setY(pos[1]);
-    	MOVE.setZ(0);
-    	return MOVE;
+        return actionController.update(agent, world, scorer, lastTime, attackAnimDelay, attackDelay, gameData);
     }
 
-    private Command attack( Hero lina, BaseEntity target, World world ) 
-    {
-        //final BaseEntity target = e.stream().sorted( ( e1, e2 ) -> Integer.compare( ((BaseNPC) e1).getHealth(), ((BaseNPC) e2).getHealth() ) )
-          //              .filter( f -> ((BaseNPC) f).getTeam() != lina.getTeam() ).findFirst().orElse( null );
-        if (target == null) {
-            //Nothing in range
-            //System.out.println( "No enemy in range" );
-            return NOOP;
-        }
-
-        //If lina has enough mana, there's a 30 % chance that she'll cast a spell
-        if (lina.getMana() > lina.getMaxMana() * 0.5 && Math.random() > 0.3) {
-            return castSpell( lina, target, world );
-        }
-        else {
-            //Otherwise she just attacks
-            final int targetindex = world.indexOf( target );
-            ATTACK.setTarget( targetindex );
-            //System.out.println( "Attacking" );
-
-            return ATTACK;
-        }
-    }
-
-    private Command buy( String item ) {
-        BUY.setItem( item );
-
-        return BUY;
-    }
-    
-    private Command sell( int slot ) {
-        SELL.setSlot( 0 );
-
-        return SELL;
-    }
-
-    private Command castSpell( Hero lina, BaseEntity target, World world ) {
-        final Random r = new Random();
-        final int index = r.nextInt( 4 );
-        final Ability a = lina.getAbilities().get( index );
-        if (a.getAbilityDamageType() == Ability.DOTA_ABILITY_BEHAVIOR_POINT) {
-            return NOOP;
-        }
-        //System.out.println( "will cast a spell" );
-        //System.out.println( "Will try " + a.getName() );
-        if (a.getLevel() < 1) {
-        //    System.out.println( "Not learned yet" );
-            return NOOP;
-        }
-        if (a.getCooldownTimeRemaining() > 0f) {
-        //    System.out.println( "On cooldown" );
-            return NOOP;
-        }
-        CAST.setAbility( index );
-        if ((a.getBehavior() & Ability.DOTA_ABILITY_BEHAVIOR_UNIT_TARGET) > 0) {
-            CAST.setX( -1 );
-            CAST.setY( -1 );
-            CAST.setZ( -1 );
-            CAST.setTarget( world.indexOf( target ) );
-        }
-        else {
-            CAST.setTarget( -1 );
-            final float[] pos = target.getOrigin();
-            CAST.setX( pos[0] );
-            CAST.setY( pos[1] );
-            CAST.setZ( pos[2] );
-        }
-
-        return CAST;
-    }
-/*
-    private Command move( Hero lina, World world ) {
-        //Walk up to the nearest enemy
-        final Set<BaseEntity> en = findEntitiesInRange( world, lina, Float.POSITIVE_INFINITY ).stream().filter( p -> p instanceof BaseNPC )
-                        .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-        final BaseEntity target = en.stream().sorted( ( e1, e2 ) -> Float.compare( distance( lina, e1 ), distance( lina, e2 ) ) )
-                        .filter( f -> f.getClass() != Tower.class ).findFirst().orElse( null );
-        if (target == null)
-        {
-            //Nothing in range
-            System.out.println( "No enemy in sight" );
-            return NOOP;
-        }
-        final BaseNPC targetEntity = (BaseNPC) target;
-        final float[] targetPos = targetEntity.getOrigin();
-        MOVE.setX( targetPos[0] );
-        MOVE.setY( targetPos[1] );
-        MOVE.setZ( targetPos[2] );
-
-       // System.out.println( "Moving" );
-
-        return MOVE;
-    }
-*/
-    /*
-    private Command retreat( World world ) {
-        //Retreat at 30% health
-        System.out.println( "Lina is retreating" );
-        final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals( "ent_dota_fountain_good" ) )
-                        .findAny().get().getValue();
-        final float[] targetPos = fountain.getOrigin();
-        MOVE.setX( targetPos[0] );
-        MOVE.setY( targetPos[1] );
-        MOVE.setZ( targetPos[2] );
-
-        return MOVE;
-    }*/
 }
