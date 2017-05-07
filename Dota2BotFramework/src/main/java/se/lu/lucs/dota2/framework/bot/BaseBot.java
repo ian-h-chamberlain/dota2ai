@@ -17,7 +17,7 @@ public abstract class BaseBot implements Bot {
     protected Select SELECT = new Select();
     protected UseItem USE_ITEM = new UseItem();
     protected Move MOVE = new Move();
-    protected Noop NOOP = new Noop();
+    public static Noop NOOP = new Noop();
     protected Attack ATTACK = new Attack();
     protected LevelUp LEVELUP = new LevelUp();
     protected Cast CAST = new Cast();

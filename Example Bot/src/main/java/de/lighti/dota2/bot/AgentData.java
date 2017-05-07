@@ -80,19 +80,18 @@ public class AgentData {
 //		"found: " + enemyCreeps.size() + " enemyCreeps " + "found: " + friendlyCreeps.size() + " friendlyCreeps ");
 	}
 	
-	
-	public AgentData(BaseEntity o)
+	public AgentData()
 	{
-		owner = o;
-		hp = mp = range = gold = level = 0.0f;
 		abilityDamages = new ArrayList<Float>();
 		coolDowns = new ArrayList<Float>();
 		enemyDistances = new ArrayList<Float>();
 		towerDistances = new HashMap<String, Float>();
 	}
+	
 	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
     	//health and mp are float percentages.
+		owner = agent;
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
     	mp = (float)agent.getMana() / (float)agent.getMaxMana();
     	range = agent.getAttackRange();

@@ -33,12 +33,12 @@ public class Agent extends BaseBot {
     private static float distance( float[] posA, float[] posB ) {
         return (float) Math.hypot( posB[0] - posA[0], posB[1] - posA[1] );
     }
-
-    private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {
-        final Set<BaseEntity> result = world.getEntities().values().stream().filter( e -> distance( center, e ) < range ).collect( Collectors.toSet() );
-        result.remove( center );
-        return result;
-    }
+//
+//    private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {
+//        final Set<BaseEntity> result = world.getEntities().values().stream().filter( e -> distance( center, e ) < range ).collect( Collectors.toSet() );
+//        result.remove( center );
+//        return result;
+//    }
 
     private int[] myLevels;
 
@@ -60,9 +60,19 @@ public class Agent extends BaseBot {
     private float lastHP = 0;
     
     public Agent() {
-        //System.out.println( "Creating Agent" );
+        System.out.println( "Creating Agent" );
         myLevels = new int[5];
-
+        //if(gameData == null){
+        //	System.out.println("Building new game data");
+        	//put the gamedata and score initializer here so it can access the agent. 
+        gameData = new AgentData();
+        scorer = new UtilityScorer(gameData);
+        if(useTensor){
+        	System.out.println("creating neural network");
+        	nn = new NeuralNetwork(gameData.stateSize, 2);
+        }
+        System.out.println("nn: " + nn);
+        //}
         
         ///////NOTE: SOME INITIALIZATION IS DONE IN UPDATE BECAUSE OF DEPENDENCIES ON THE INGAME WORLD.
 
@@ -70,11 +80,11 @@ public class Agent extends BaseBot {
     }
     public void train(Hero agent, World world)
     {
-    	//if(nn == null){
-    	//	return;
-    	//}
     	float[] data = gameData.parseGameState(agent, world);
-
+    	
+    	System.out.println("Action, reward:" );
+    	System.out.println(lastAction);
+    	System.out.println(lastReward);
     	// update the network with the previous reward and new state
     	nn.propagateReward(lastAction, lastReward, data);
     	
@@ -83,19 +93,33 @@ public class Agent extends BaseBot {
         //set inputs of neural network and get new q-values
         
     	float[] outputs = nn.getQ(data);
+    	
+    	System.out.println(outputs[0]);
 
+    	Random r = new Random();
+    	if (r.nextFloat() < nn.epsilon) {
+    		lastAction = r.nextInt(2);
+    	}
+    	else {
+    		if (outputs[0] > outputs[1])
+        	{
+    			lastAction = 0;
+        	}
+    		else {
+    			lastAction = 1;
+    		}
+    	}
+    	
     	lastReward = 0f;
     	// outputs[0] = retreat
-    	if (outputs[0] > outputs[1])
+    	if (lastAction == 0)
     	{
-    		lastAction = 0;
     		scorer.currentMode = UtilityScorer.backOff;
     		
     		if (data[0] < lastHP)
     			lastReward = data[0] - lastHP;
     	}
     	else {
-    		lastAction = 1;
     		scorer.currentMode = UtilityScorer.brawl;
     		
     		if (data[0] < lastHP)
@@ -164,7 +188,7 @@ public class Agent extends BaseBot {
     @Override
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
-
+    	System.out.println("Starting update");
         if (shouldBuyTango) {
             shouldBuyTango = false;
             return buy( "item_tango" );
@@ -195,15 +219,7 @@ public class Agent extends BaseBot {
         }
 
         final Hero agent = (Hero) world.getEntities().get( myIndex );
-        if(gameData == null){
-        	//put the gamedata and score initializer here so it can access the agent. 
-        	gameData = new AgentData(agent);
-        	scorer = new UtilityScorer(gameData);
-        	if(useTensor){
-        		nn = new NeuralNetwork(gameData.stateSize, 2);
-        	}
-            System.out.println("nn: " + nn);
-        }
+
 //        for (final Ability a : lina.getAbilities().values()) {
 //            myLevels[a.getAbilityIndex()] = a.getLevel();
 //            System.out.println( a );
