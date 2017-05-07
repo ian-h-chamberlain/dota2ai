@@ -48,28 +48,25 @@ public class Agent extends BaseBot {
     private NeuralNetwork nn;
     private AgentData gameData;
     private UtilityScorer scorer;
-    private static final long attackAnimDelay = 170;
+    private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
     private long lastTime = 0;
+    private static final boolean useTensor = false;
     
     public Agent() {
         System.out.println( "Creating Agent" );
         myLevels = new int[5];
-//<<<<<<< HEAD
-       // nn = new NeuralNetwork(5 /*TODO number of actions */);
-       // nn.testQ(1);
         
-//=======
-
-       // gameData = new AgentData();
-
-        nn = new NeuralNetwork(gameData.stateSize, 3);
-//>>>>>>> 6de233d2f3e865c593fa0e1b22cc5b0d73d21d17
+        ///////NOTE: SOME INITIALIZATION IS DONE IN UPDATE BECAUSE OF DEPENDENCIES ON THE INGAME WORLD.
     }
     public void train(Hero agent, World world)
     {
-    	
+    	if(nn == null){
+    		return;
+    	}
     	float[] data = gameData.parseGameState(agent, world);
+
+        System.out.println("nn: " + nn);
     	//set inputs of neural network
     	nn.setInputs(data);
         
@@ -170,13 +167,19 @@ public class Agent extends BaseBot {
         	//put the gamedata and score initializer here so it can access the agent. 
         	gameData = new AgentData(agent);
         	scorer = new UtilityScorer(gameData);
+        	if(useTensor){
+        		nn = new NeuralNetwork(gameData.stateSize, 3);
+        	}
+            System.out.println("nn: " + nn);
         }
 //        for (final Ability a : lina.getAbilities().values()) {
 //            myLevels[a.getAbilityIndex()] = a.getLevel();
 //            System.out.println( a );
 //        }
         gameData.populate(agent, world);
-        
+        if(!useTensor){
+        	gameData.parseGameState(agent, world);
+        }
         /*
         if (agent.getHealth() <= agent.getMaxHealth() * 0.4) {
             return retreat( world );
@@ -187,24 +190,22 @@ public class Agent extends BaseBot {
                         .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
         */
         //Train agent on update
-        train(agent, world);
+        if(useTensor){
+        	train(agent, world);
+        }
         
         long t = System.currentTimeMillis();
         if(t - lastTime < attackAnimDelay){
-        	System.out.println("anim. " + t + ", " + lastTime + ", " + attackAnimDelay);
         	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
             if (e != null) {
-            	System.out.println("attack");
                 return attack( agent, e, world );
             }else {
             	e = AgentData.getNearest(gameData.enemyHeroes, gameData.pos);
             	if(e != null){
-            		System.out.println("attack");
             		return attack(agent, e, world);
             	}else{
             		e = AgentData.getNearest(gameData.enemyTurrets, gameData.pos);
             		if(e != null){
-            			System.out.println("attack");
             			return attack(agent,e,world);
             		}
             		
@@ -212,28 +213,23 @@ public class Agent extends BaseBot {
             }
         }
         if(t - lastTime > attackDelay){
-        	System.out.println("attacking " + (t-lastTime));
         	lastTime = t;
         	BaseEntity e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
             if (e != null) {
-            	System.out.println("attack");
                 return attack( agent, e, world );
             }else {
             	e =  AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
             	if(e != null){
-            		System.out.println("attack");
             		return attack(agent, e, world);
             	}else{
             		e = AgentData.getNearest(gameData.enemyCreeps, gameData.pos);
             		if(e != null){
-            			System.out.println("attack");
             			return attack(agent,e,world);
             		}
             		
             	}
             }
         }
-        System.out.println("goto");
         return goTo (scorer.getPoint(gameData.pos));//( agent, world );
         //if()
         /*
