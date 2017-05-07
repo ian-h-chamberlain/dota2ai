@@ -197,33 +197,6 @@ public class Agent extends BaseBot {
 
     @Override
     public Command update( World world ) {
-//        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
-
-    	/*
-=======
-    	System.out.println("Starting update");
->>>>>>> 93e9dce9ec1e8b6187f83dbbb2fc44e320e9620c
-        if (shouldBuyTango) {
-            shouldBuyTango = false;
-            return buy( "item_tango" );
-        }
-        if (shouldSellTango) {
-            shouldSellTango = false;
-            return sell(0 );
-        }
-        
-        if (mode == Mode.DISABLED) {
-            if (shouldRetreat) {
-                shouldRetreat = false;
-                return retreat( world );
-            }
-
-            return NOOP;
-        }*/
-
-//        System.out.println( world.getEntities().size() + " present" );
-//        world.getEntities().values().stream().filter( e -> e.getClass() == Building.class ).forEach( e -> System.out.println( e ) );
-//        world.getEntities().values().stream().filter( e -> e.getClass() == Tower.class ).forEach( e -> System.out.println( e ) );
         final int myIndex = world.searchIndexByName( MY_HERO_NAME );
         if (myIndex < 0) {
             //I'm probably dead
