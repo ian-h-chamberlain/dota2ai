@@ -43,8 +43,8 @@ predict = tf.argmax(Qout,1, name="predict")
 
 # build the training model using new q-values and loss function
 nextQ = tf.placeholder(shape=outputShape,dtype=tf.float32, name="nextQ")
-loss = tf.reduce_sum(tf.square(nextQ - Qout), name="loss")
-trainer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+loss = tf.reduce_mean(tf.square(nextQ - Qout), name="loss")
+trainer = tf.train.GradientDescentOptimizer(learning_rate=0.0001)
 updateModel = trainer.minimize(loss, name="updateModel")
 
 # save our graph to a file for use with Java
@@ -54,3 +54,5 @@ f = open(graphFile, "wb")
 f.write(graphRep.SerializeToString())
 
 print("Finished building " + graphFile)
+
+    

@@ -21,6 +21,10 @@ public class Vec3 {
 		return new float[]{vec1[0] + vec2[0],vec1[1] + vec2[1] };
 	}
 	
+	public static float[] sub(float[] vec1, float[] vec2){
+		return new float[]{vec1[0] - vec2[0], vec1[1] - vec2[1]};
+	}
+	
 	public static float[] mult(float[] vec, float coef){
 		return new float[]{vec[0] * coef, vec[1] * coef};
 	}

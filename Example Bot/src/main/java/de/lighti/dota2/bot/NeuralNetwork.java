@@ -117,7 +117,7 @@ public class NeuralNetwork {
 
 			float r = fakeReward(act);
 			
-			propagateReward(targetQ, act, r);
+			// propagateReward(targetQ, act, r);
 		}
 		
 		System.out.print("[");
@@ -151,33 +151,75 @@ public class NeuralNetwork {
 	// After taking an action, back propagate the reward for that action based on a new state
 	public void propagateReward(int action, float reward, float[] newInputs)
 	{
+		System.out.println("Propagating " + action);
 		float[] targetQ = getQ();
+		float[] oldInputs = inputs;
 		setInputs(newInputs);
-		propagateReward(targetQ, action, reward);
+		propagateReward(oldInputs, targetQ, action, reward);
 	}
 	
 	// helper function for back-propagation
-	private void propagateReward(float[] targetQ, int action, float reward)
+	private void propagateReward(float[] oldInputs, float[] targetQ, int action, float reward)
 	{
 		// and get the next q-value and action
 		float[] newQ = getQ(); 
-		int maxQIndex = getAction();
 		
-		// find maxQ of new state
-		float maxQ = newQ[maxQIndex];
+		float maxQ = newQ[0];
+		for (int i=0; i < newQ.length; i++)
+		{
+			if (maxQ < newQ[i])
+				maxQ = newQ[i];
+		}
 		
 		// update new q-values
 		targetQ[action] = reward + gamma * maxQ;
+		System.out.println("updated targetq[action] to " + targetQ[action]);
 		
 		// now run the update model to back-propagate reward
-		Tensor in = Tensor.create(new float[][]{inputs});
+		Tensor in = Tensor.create(new float[][]{oldInputs});
 
-		tfSession.runner()
+		float[][] weights = new float[inputs.length][outputs.length];
+		
+		tfSession.runner().fetch("weights").run().get(0).copyTo(weights);
+		
+		/*
+		System.out.println("Weights before:");
+		for (int i=0; i<inputs.length; i++)
+		{
+			System.out.print("[");
+			for (int j=0; j<outputs.length; j++)
+			{
+				System.out.print(weights[i][j] + ",");
+			}
+			System.out.println("]");
+		}
+		*/
+		
+		List<Tensor> outs = tfSession.runner()
 			.feed("inputs", in)
 			.feed("nextQ", Tensor.create(targetQ))
 			.addTarget("updateModel")
-			.addTarget("weights")
+			.fetch("weights")
+			.fetch("loss")
 			.run();
+		
+		outs.get(0).copyTo(weights);
+		float loss = outs.get(1).floatValue();
+		
+		/*
+		System.out.println("Weights after:");
+		for (int i=0; i<inputs.length; i++)
+		{
+			System.out.print("[");
+			for (int j=0; j<outputs.length; j++)
+			{
+				System.out.print(weights[i][j] + ",");
+			}
+			System.out.println("]");
+		}
+		*/
+		
+		System.out.println("Loss: " + loss);
 		
 		// TODO reduce epsilon over iterations
 	}
