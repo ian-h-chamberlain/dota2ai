@@ -18,13 +18,13 @@ public class NeuralNetwork {
 	Graph graph;
 	Session tfSession;
 	int numLayers = 1;
-	int numNodes = 15;
+	int numNodes = 75;
 	
 	float[] inputs;
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 0.05f;
+	float epsilon = 0.1f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
 		
@@ -174,7 +174,6 @@ public class NeuralNetwork {
 		{
 			targetQ[action[i]] = reward + gamma * newQ[predictActions[i]];
 			// update new q-values
-			System.out.println("updated targetq[action] to " + targetQ[action[i]]);
 		}
 		
 		// now run the update model to back-propagate reward

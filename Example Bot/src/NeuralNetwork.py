@@ -53,7 +53,7 @@ predict = tf.argmax(qOut,1, name="predict")
 nextQ = tf.placeholder(shape=outputShape,dtype=tf.float32, name="nextQ")
 loss = tf.clip_by_value(
         tf.reduce_mean(tf.square(nextQ - qOut)),
-        1.0e-8, 1.0e5, name="loss")
+        0, 1.0e5, name="loss")
 trainer = tf.train.GradientDescentOptimizer(learning_rate=1.0e-8)
 updateModel = trainer.minimize(loss, name="updateModel")
 
