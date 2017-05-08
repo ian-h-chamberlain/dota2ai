@@ -34,13 +34,16 @@ public class Agent extends BaseBot {
     Action actionController;
 
     private static final boolean useTensor = true;
-    int lastAction = -1;
+    int[] lastAction;
     float lastReward;
-    OutputProcess networkProcessor;
+    public OutputProcess networkProcessor;
     
     private float[] lastData;
     
+    public static Agent instance = null;
+    
     public Agent() {
+    	instance = this;
        // System.out.println( "Creating Agent" );
         myLevels = new int[5];
         //if(gameData == null){
@@ -67,12 +70,12 @@ public class Agent extends BaseBot {
     	}
     	System.out.println("]");
     	
-    	if (lastAction >= 0)
+    	if (lastAction != null)
     	{
 			System.out.println("Action, reward: " + lastAction + "," + lastReward );
 
 			// update the network with the previous reward and new state
-			nn.propagateReward(new int[]{lastAction}, lastReward, data);
+			nn.propagateReward(lastAction, lastReward, data);
 		}
     	
         //set inputs of neural network and get new q-values
@@ -89,27 +92,9 @@ public class Agent extends BaseBot {
     		//lastAction = nn.getAction(data);
     	}
     	
-    	float[] curPos = new float[] {data[5], data[6]};
-    	float[] lastPos;
-    	if (lastData != null)
-    		lastPos = new float[] {lastData[5], lastData[6]};
-    	else
-    		lastPos = curPos;
+    	lastReward = gameData.reward;
     	
-    	float[] moved = Vec3.sub(curPos, lastPos);
-    	
-    	// reward motion in positive direction
-    	lastReward = moved[0] + moved[1];
-    	System.out.println(moved[0] + "," + moved[1]);
-    	
-    	// outputs[0] = retreat
-    	if (lastAction == 0)
-    	{
-    		scorer.currentMode = UtilityScorer.backOff;
-    	}
-    	else {
-    		scorer.currentMode = UtilityScorer.brawl;
-       	}
+    	lastAction = chosenAction;
 
     	lastData = data.clone();
     }
@@ -204,9 +189,9 @@ public class Agent extends BaseBot {
     		int inputIndex = 0;
     		int[] ret = new int[outputs.length];
     		for(int i = 0; i < outputs.length; i++){
-    			int maxIndex = -1;
+    			int maxIndex = 0;
     			float maxVal = Float.MIN_VALUE;
-    			for(int j = 0; j < outputs[i].length; i++){
+    			for(int j = 0; j < outputs[i].length; j++){
     				if(inputs[inputIndex] > maxVal){
     					maxIndex = j;
     					maxVal = inputs[inputIndex];

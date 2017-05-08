@@ -166,19 +166,13 @@ public class NeuralNetwork {
 	private void propagateReward(float[] oldInputs, float[] targetQ, int[] action, float reward)
 	{
 		// and get the next q-value and action
-		float[] newQ = getQ(); 
+		float[] newQ = getQ();
 		
-		float maxQ = newQ[0];
-		for (int i=0; i<newQ.length; i++)
-		{
-			if (maxQ < newQ[i])
-				maxQ = newQ[i];
-		}
-		// TODO get max q-value from output predictor
+		int[] predictActions = Agent.instance.networkProcessor.runNumbers(newQ, true);
 		
 		for (int i=0; i < action.length; i++)
 		{
-			targetQ[action[i]] = reward + gamma * maxQ /* newQ[action[i]]*/;
+			targetQ[action[i]] = reward + gamma * newQ[predictActions[i]];
 			// update new q-values
 			System.out.println("updated targetq[action] to " + targetQ[action[i]]);
 		}
