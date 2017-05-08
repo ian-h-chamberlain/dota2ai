@@ -18,12 +18,13 @@ public class NeuralNetwork {
 	Graph graph;
 	Session tfSession;
 	int numLayers = 1;
+	int numNodes = 15;
 	
 	float[] inputs;
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 0.1f;
+	float epsilon = 0.05f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
 		
@@ -38,7 +39,7 @@ public class NeuralNetwork {
 			// run our python graph generator first
 			ProcessBuilder pb = new ProcessBuilder(
 					"python", "src\\NeuralNetwork.py",
-					"" + numLayers, "" + inputs.length, "" + outputs.length,
+					"" + numLayers, "" + numNodes, "" + inputs.length, "" + outputs.length,
 					graphFile);
 
 			System.out.println("*** GRAPH GENERATOR RUNNING ***\n");
@@ -78,9 +79,12 @@ public class NeuralNetwork {
 		
 		// Assign all variables in the graph
 		tfSession.runner()
-			.addTarget("weights")
-			.addTarget("randomUniform")
-			.addTarget("assign")
+			.addTarget("weights0")
+			.addTarget("weights1")
+			.addTarget("randomUniform0")
+			.addTarget("randomUniform1")
+			.addTarget("assign0")
+			.addTarget("assign1")
 			.run();
 	}
 
@@ -177,47 +181,15 @@ public class NeuralNetwork {
 		
 		// now run the update model to back-propagate reward
 		Tensor in = Tensor.create(new float[][]{oldInputs});
-
-		float[][] weights = new float[inputs.length][outputs.length];
-		
-		tfSession.runner().fetch("weights").run().get(0).copyTo(weights);
-		
-		/*
-		System.out.println("Weights before:");
-		for (int i=0; i<inputs.length; i++)
-		{
-			System.out.print("[");
-			for (int j=0; j<outputs.length; j++)
-			{
-				System.out.print(weights[i][j] + ",");
-			}
-			System.out.println("]");
-		}
-		*/
 		
 		List<Tensor> outs = tfSession.runner()
 			.feed("inputs", in)
 			.feed("nextQ", Tensor.create(targetQ))
 			.addTarget("updateModel")
-			.fetch("weights")
 			.fetch("loss")
 			.run();
 		
-		outs.get(0).copyTo(weights);
-		float loss = outs.get(1).floatValue();
-		
-		/*
-		System.out.println("Weights after:");
-		for (int i=0; i<inputs.length; i++)
-		{
-			System.out.print("[");
-			for (int j=0; j<outputs.length; j++)
-			{
-				System.out.print(weights[i][j] + ",");
-			}
-			System.out.println("]");
-		}
-		*/
+		float loss = outs.get(0).floatValue();
 		
 		System.out.println("Loss: " + loss);
 		
