@@ -21,7 +21,7 @@ public class Agent extends BaseBot {
 
     private static final String MY_HERO_NAME = "npc_dota_hero_sniper";
     
-    private static final int[] levels = {0,2,1,0,0,3,0,2,2,4,3,2,1,1,6,3,1,9,11};
+    private static final int[] levels = {0,2,1,0,0,3,0,2,2,4,3,2,1,1,6,3,1,9,11};//The order for 
     int levelIndex = 0;
 
     private int[] myLevels;
@@ -29,18 +29,19 @@ public class Agent extends BaseBot {
     private Mode mode = Mode.ENABLED;
     private NeuralNetwork nn;
     private AgentData gameData;
-
+    Random r = new Random();
     private UtilityScorer scorer;
     Action actionController;
 
     private static final boolean useTensor = false;
     int lastAction;
     float lastReward;
+    OutputProcess networkProcessor;
     
     private float lastHP = 0;
     
     public Agent() {
-        System.out.println( "Creating Agent" );
+       // System.out.println( "Creating Agent" );
         myLevels = new int[5];
         //if(gameData == null){
         //	System.out.println("Building new game data");
@@ -48,16 +49,12 @@ public class Agent extends BaseBot {
         gameData = new AgentData();
         actionController = new Action(ATTACK, CAST, MOVE, NOOP, BUY, SELL, gameData);
         scorer = new UtilityScorer(gameData);
+        networkProcessor = new OutputProcess();
         if(useTensor){
         	System.out.println("creating neural network");
-        	nn = new NeuralNetwork(gameData.stateSize, 2);
+        	nn = new NeuralNetwork(gameData.stateSize, networkProcessor.size());
         }
-        System.out.println("nn: " + nn);
-        //}
-        
-        ///////NOTE: SOME INITIALIZATION IS DONE IN UPDATE BECAUSE OF DEPENDENCIES ON THE INGAME WORLD.
-
-
+        //System.out.println("nn: " + nn);
     }
     public void train(Hero agent, World world)
     {
@@ -76,19 +73,12 @@ public class Agent extends BaseBot {
     	float[] outputs = nn.getQ(data);
     	
     	System.out.println(outputs[0]);
-
-    	Random r = new Random();
+    	int[] chosenAction;
     	if (r.nextFloat() < nn.epsilon) {
-    		lastAction = r.nextInt(2);
+    		chosenAction = this.networkProcessor.pickRandom();
     	}
     	else {
-    		if (outputs[0] > outputs[1])
-        	{
-    			lastAction = 0;
-        	}
-    		else {
-    			lastAction = 1;
-    		}
+    		chosenAction = this.networkProcessor.runNumbers(outputs);
     	}
     	
     	lastReward = 0f;
@@ -121,28 +111,6 @@ public class Agent extends BaseBot {
     		levelIndex++;
     	}
     	return LEVELUP;
-    	/*
-        LEVELUP.setAbilityIndex( -1 );
-        if(null != LEVELUP){
-        	//System.out.println("hi");
-        }
-        if (myLevels[0] < 4) {
-            LEVELUP.setAbilityIndex( 0 );
-        }
-        else if (myLevels[1] < 4) {
-            LEVELUP.setAbilityIndex( 1 );
-        }
-        else if (myLevels[2] < 4) {
-            LEVELUP.setAbilityIndex( 2 );
-        }
-        else if (myLevels[3] < 3) {
-            LEVELUP.setAbilityIndex( 3 );
-        }
-        else if (myLevels[4] < 10) {
-            LEVELUP.setAbilityIndex( 4 );
-        }
-        System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
-        return LEVELUP;*/
     }
 
     @Override
@@ -151,16 +119,6 @@ public class Agent extends BaseBot {
             case "lina go":
                 mode = Mode.ENABLED;
                 break;
-/*            case "lina stop":
-                shouldRetreat = true;
-                mode = Mode.DISABLED;
-                break;
-            case "lina sell tango":
-                shouldSellTango = true;
-                break;
-            case "lina buy tango":
-                shouldBuyTango = true;
-                break;*/
         }
     }
 
@@ -210,5 +168,129 @@ public class Agent extends BaseBot {
         }
         return actionController.update(agent, world, scorer);
     }
-
+    
+    
+    
+    
+    
+    public interface Output{
+    	void Run();
+    }
+    
+    public class OutputProcess{
+    	
+    	public int[] runNumbers(float[] inputs){
+    		return runNumbers(inputs,false);
+    	}
+    	
+    	public int[] runNumbers(float[] inputs, boolean dummyRun){
+    		if(size() != inputs.length){
+    			System.err.println("Warning: " + size() + " does not equal " + inputs.length);
+    		}
+    		int inputIndex = 0;
+    		int[] ret = new int[outputs.length];
+    		for(int i = 0; i < outputs.length; i++){
+    			int maxIndex = -1;
+    			float maxVal = Float.MIN_VALUE;
+    			for(int j = 0; j < outputs[i].length; i++){
+    				if(inputs[inputIndex] > maxVal){
+    					maxIndex = j;
+    					maxVal = inputs[inputIndex];
+    				}
+    				
+    				inputIndex++;
+    			}
+    			ret[i] = maxIndex;
+    			if(!dummyRun){
+        			outputs[i][maxIndex].Run();
+    			}
+    		}
+    		return ret;
+    	}
+    	
+    	public int[] pickRandom(){
+    		return pickRandom(false);
+    	}
+    	
+    	public int[] pickRandom(boolean dummyRun){
+    		int[] ret = new int[outputs.length];
+    		for(int i = 0; i < outputs.length;i++){
+    			ret[i] = r.nextInt(outputs[i].length);
+    			outputs[i][ret[i]].Run();
+    		}
+    		return ret;
+    	}
+    	
+    	public int size(){
+    		int s = 0; 
+    		for(int i = 0; i < outputs.length; i++){
+    			s += outputs[i].length;
+    		}
+    		return s;
+    	}
+    	
+    	public Output[][] outputs = new Output[][]{
+    		new Output[]{
+    				
+    			//This is the UtilityScorerer output array.
+    			new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.backOff;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.brawl;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.farm;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.gank;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.guard;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.laneSwitch;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.siege;
+					}
+				}
+    		},
+    		
+    		new Output[]{///TARGET SELECTION
+    			new Output(){
+    				public void Run() {
+						actionController.mode = Action.selectionType.enemyCreeps;
+					}
+    			},new Output(){
+    				public void Run() {
+						actionController.mode = Action.selectionType.enemyHeroes;
+					}
+    			},new Output(){
+    				public void Run() {
+						actionController.mode = Action.selectionType.enemyTurrets;
+					}
+    			},new Output(){
+    				public void Run() {
+						actionController.mode = Action.selectionType.allyCreeps;
+					}
+    			}
+    		}
+    	};
+    }
+    
 }

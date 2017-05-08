@@ -36,7 +36,7 @@ public class Action
     private long attackSpeedCooldown = 0; 
     //private long lastTime = 0;
     Random rand = new Random();
-
+    public selectionType mode = selectionType.farmTargets;
     public enum selectionType
     {
     	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, allAllies, farmTargets, Brawl
@@ -88,7 +88,7 @@ public class Action
         if(t > attackSpeedCooldown){
         	//System.out.println("attacking.");
         	attackSpeedCooldown = t + attackDelay;
-        	e = targetFilter(agent, selectionType.farmTargets.ordinal(), filterType.HEALTH.ordinal());
+        	e = targetFilter(agent, mode.ordinal(), filterType.HEALTH.ordinal());
         	
             if (e != null) {
                 if (e.getClass() == Hero.class ){
