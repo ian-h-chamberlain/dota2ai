@@ -26,8 +26,8 @@ public class UtilityScorer {
 	public static final float[] farm = new float[]{-1000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,-.05f,0};
 
 	public static final float[] laneSwitch = new float[]{-2000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,.05f,1500};
-	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,-.0001f,-.05f};
-	public static final float[] guard = new float[]{0,5,1000,-5,-2,0,-5, -6000,-6000 ,-.0001f};
+	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,-.0001f,-.05f,0};
+	public static final float[] guard = new float[]{0,5,1000,-5,-2,0,-5, -6000,-6000 ,-.0001f,0,0};
 
 	public static final float[] brawl = new float[]{-300,2,1000,-5,-1,-2,0, 0,0 ,-.0001f,-.05f,0};
 	

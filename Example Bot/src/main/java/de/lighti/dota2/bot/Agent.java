@@ -20,7 +20,9 @@ public class Agent extends BaseBot {
     }
 
     private static final String MY_HERO_NAME = "npc_dota_hero_sniper";
-
+    
+    private static final int[] levels = {0,2,1,0,0,3,0,2,2,4,3,2,1,1,6,3,1,9,11};
+    int levelIndex = 0;
 
     private int[] myLevels;
 
@@ -113,6 +115,9 @@ public class Agent extends BaseBot {
     
     @Override
     public LevelUp levelUp() {
+    	LEVELUP.setAbilityIndex(levels[levelIndex++]);
+    	return LEVELUP;
+    	/*
         LEVELUP.setAbilityIndex( -1 );
         if(null != LEVELUP){
         	//System.out.println("hi");
@@ -133,7 +138,7 @@ public class Agent extends BaseBot {
             LEVELUP.setAbilityIndex( 4 );
         }
         System.out.println( "LevelUp " + LEVELUP.getAbilityIndex() );
-        return LEVELUP;
+        return LEVELUP;*/
     }
 
     @Override
