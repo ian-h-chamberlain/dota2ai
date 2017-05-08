@@ -18,12 +18,13 @@ public class NeuralNetwork {
 	Graph graph;
 	Session tfSession;
 	int numLayers = 1;
+	int numNodes = 15;
 	
 	float[] inputs;
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 0.1f;
+	float epsilon = 0.05f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
 		
@@ -38,7 +39,7 @@ public class NeuralNetwork {
 			// run our python graph generator first
 			ProcessBuilder pb = new ProcessBuilder(
 					"python", "src\\NeuralNetwork.py",
-					"" + numLayers, "" + inputs.length, "" + outputs.length,
+					"" + numLayers, "" + numNodes, "" + inputs.length, "" + outputs.length,
 					graphFile);
 
 			System.out.println("*** GRAPH GENERATOR RUNNING ***\n");
@@ -78,9 +79,12 @@ public class NeuralNetwork {
 		
 		// Assign all variables in the graph
 		tfSession.runner()
-			.addTarget("weights")
-			.addTarget("randomUniform")
-			.addTarget("assign")
+			.addTarget("weights0")
+			.addTarget("weights1")
+			.addTarget("randomUniform0")
+			.addTarget("randomUniform1")
+			.addTarget("assign0")
+			.addTarget("assign1")
 			.run();
 	}
 
@@ -117,7 +121,7 @@ public class NeuralNetwork {
 
 			float r = fakeReward(act);
 			
-			propagateReward(targetQ, act, r);
+			// propagateReward(targetQ, act, r);
 		}
 		
 		System.out.print("[");
@@ -151,33 +155,43 @@ public class NeuralNetwork {
 	// After taking an action, back propagate the reward for that action based on a new state
 	public void propagateReward(int action, float reward, float[] newInputs)
 	{
+		System.out.println("Propagating " + action);
 		float[] targetQ = getQ();
+		float[] oldInputs = inputs;
 		setInputs(newInputs);
-		propagateReward(targetQ, action, reward);
+		propagateReward(oldInputs, targetQ, action, reward);
 	}
 	
 	// helper function for back-propagation
-	private void propagateReward(float[] targetQ, int action, float reward)
+	private void propagateReward(float[] oldInputs, float[] targetQ, int action, float reward)
 	{
 		// and get the next q-value and action
 		float[] newQ = getQ(); 
-		int maxQIndex = getAction();
 		
-		// find maxQ of new state
-		float maxQ = newQ[maxQIndex];
+		float maxQ = newQ[0];
+		for (int i=0; i < newQ.length; i++)
+		{
+			if (maxQ < newQ[i])
+				maxQ = newQ[i];
+		}
 		
 		// update new q-values
 		targetQ[action] = reward + gamma * maxQ;
+		System.out.println("updated targetq[action] to " + targetQ[action]);
 		
 		// now run the update model to back-propagate reward
-		Tensor in = Tensor.create(new float[][]{inputs});
-
-		tfSession.runner()
+		Tensor in = Tensor.create(new float[][]{oldInputs});
+		
+		List<Tensor> outs = tfSession.runner()
 			.feed("inputs", in)
 			.feed("nextQ", Tensor.create(targetQ))
 			.addTarget("updateModel")
-			.addTarget("weights")
+			.fetch("loss")
 			.run();
+		
+		float loss = outs.get(0).floatValue();
+		
+		System.out.println("Loss: " + loss);
 		
 		// TODO reduce epsilon over iterations
 	}
