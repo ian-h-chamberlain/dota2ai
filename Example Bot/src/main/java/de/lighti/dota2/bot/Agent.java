@@ -33,12 +33,12 @@ public class Agent extends BaseBot {
     private UtilityScorer scorer;
     Action actionController;
 
-    private static final boolean useTensor = false;
-    int lastAction;
+    private static final boolean useTensor = true;
+    int lastAction = -1;
     float lastReward;
     OutputProcess networkProcessor;
     
-    private float lastHP = 0;
+    private float[] lastData;
     
     public Agent() {
        // System.out.println( "Creating Agent" );
@@ -60,13 +60,20 @@ public class Agent extends BaseBot {
     {
     	float[] data = gameData.parseGameState(agent, world);
     	
-    	System.out.println("Action, reward:" );
-    	System.out.println(lastAction);
-    	System.out.println(lastReward);
-    	// update the network with the previous reward and new state
-    	nn.propagateReward(lastAction, lastReward, data);
+    	System.out.print("data: [");
+    	for (int i=0; i<data.length; i++)
+    	{
+    		System.out.print(data[i] + ",");
+    	}
+    	System.out.println("]");
     	
-        System.out.println("nn: " + nn);
+    	if (lastAction >= 0)
+    	{
+			System.out.println("Action, reward: " + lastAction + "," + lastReward );
+
+			// update the network with the previous reward and new state
+			nn.propagateReward(new int[]{lastAction}, lastReward, data);
+		}
     	
         //set inputs of neural network and get new q-values
         
@@ -79,25 +86,32 @@ public class Agent extends BaseBot {
     	}
     	else {
     		chosenAction = this.networkProcessor.runNumbers(outputs);
+    		//lastAction = nn.getAction(data);
     	}
     	
-    	lastReward = 0f;
+    	float[] curPos = new float[] {data[5], data[6]};
+    	float[] lastPos;
+    	if (lastData != null)
+    		lastPos = new float[] {lastData[5], lastData[6]};
+    	else
+    		lastPos = curPos;
+    	
+    	float[] moved = Vec3.sub(curPos, lastPos);
+    	
+    	// reward motion in positive direction
+    	lastReward = moved[0] + moved[1];
+    	System.out.println(moved[0] + "," + moved[1]);
+    	
     	// outputs[0] = retreat
     	if (lastAction == 0)
     	{
     		scorer.currentMode = UtilityScorer.backOff;
-    		
-    		if (data[0] < lastHP)
-    			lastReward = data[0] - lastHP;
     	}
     	else {
     		scorer.currentMode = UtilityScorer.brawl;
-    		
-    		if (data[0] < lastHP)
-    			lastReward = data[0] - lastHP;
-    	}
+       	}
 
-    	lastHP = data[0];
+    	lastData = data.clone();
     }
     
     @Override
