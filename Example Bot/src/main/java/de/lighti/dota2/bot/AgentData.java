@@ -18,6 +18,7 @@ import se.lu.lucs.dota2.framework.game.World;
 public class AgentData {
 	float hp, mp, range, gold, level;
 	float[] pos;
+	public float reward;
 	List<Float> abilityDamages;
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
@@ -37,6 +38,8 @@ public class AgentData {
 	public final String creepName = "creep";
 	public final String turretName = "tower";
 /*	
+ * 
+ * 
 	public Set<BaseEntity> getAllEnemies(){
 		
 		return new HashSet<BaseEntity>(enemyHeroes);//.addAll(enemyHeroes);
@@ -48,6 +51,8 @@ public class AgentData {
 		Set<BaseEntity> entities = findEntitiesInRange( world, center, range).stream().filter(p1).filter(predicate).collect( Collectors.toSet() );
 		return entities;
 	}*/
+	
+	
 	
 	public static BaseEntity getNearest(Set<BaseEntity> set, float[] point){
 		float dist = Float.MAX_VALUE;
@@ -91,6 +96,7 @@ public class AgentData {
 	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
     	//health and mp are float percentages.
+		reward = getReward(agent);
 		owner = agent;
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
     	mp = (float)agent.getMana() / (float)agent.getMaxMana();
@@ -135,6 +141,16 @@ public class AgentData {
 		float parsedData[] = { hp, mp, range, level, gold, pos[0], pos[1], pos[2] };
 		return parsedData;
 	}
+	
+	
+	private float getReward(Hero agent){ //THIS SHOULD ONLY BE CALLED AT THE START OF PARSEGAMESTATE!
+		float reward = -1;
+		reward += agent.getGold() - gold;
+		reward += agent.getHealth() - hp;
+		//reward += 
+		return reward;
+	}
+	
     private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {
         final Set<BaseEntity> result = world.getEntities().values().stream().filter( e -> distance( center, e ) < range ).collect( Collectors.toSet() );
         result.remove( center );
