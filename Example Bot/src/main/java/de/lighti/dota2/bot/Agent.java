@@ -75,7 +75,7 @@ public class Agent extends BaseBot {
 			System.out.println("Action, reward: " + lastAction + "," + lastReward );
 
 			// update the network with the previous reward and new state
-			nn.propagateReward(lastAction, lastReward, data);
+			nn.propagateReward(new int[]{lastAction}, lastReward, data);
 		}
     	
         //set inputs of neural network and get new q-values

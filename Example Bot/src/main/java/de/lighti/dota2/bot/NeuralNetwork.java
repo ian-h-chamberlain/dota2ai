@@ -153,9 +153,9 @@ public class NeuralNetwork {
 	}
 	
 	// After taking an action, back propagate the reward for that action based on a new state
-	public void propagateReward(int action, float reward, float[] newInputs)
+	public void propagateReward(int[] action, float reward, float[] newInputs)
 	{
-		System.out.println("Propagating " + action);
+		System.out.println("Propagating");
 		float[] targetQ = getQ();
 		float[] oldInputs = inputs;
 		setInputs(newInputs);
@@ -163,21 +163,25 @@ public class NeuralNetwork {
 	}
 	
 	// helper function for back-propagation
-	private void propagateReward(float[] oldInputs, float[] targetQ, int action, float reward)
+	private void propagateReward(float[] oldInputs, float[] targetQ, int[] action, float reward)
 	{
 		// and get the next q-value and action
 		float[] newQ = getQ(); 
 		
 		float maxQ = newQ[0];
-		for (int i=0; i < newQ.length; i++)
+		for (int i=0; i<newQ.length; i++)
 		{
 			if (maxQ < newQ[i])
 				maxQ = newQ[i];
 		}
+		// TODO get max q-value from output predictor
 		
-		// update new q-values
-		targetQ[action] = reward + gamma * maxQ;
-		System.out.println("updated targetq[action] to " + targetQ[action]);
+		for (int i=0; i < action.length; i++)
+		{
+			targetQ[action[i]] = reward + gamma * maxQ /* newQ[action[i]]*/;
+			// update new q-values
+			System.out.println("updated targetq[action] to " + targetQ[action[i]]);
+		}
 		
 		// now run the update model to back-propagate reward
 		Tensor in = Tensor.create(new float[][]{oldInputs});
