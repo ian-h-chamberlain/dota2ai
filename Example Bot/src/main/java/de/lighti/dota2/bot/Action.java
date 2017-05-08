@@ -1,5 +1,6 @@
 package de.lighti.dota2.bot;
 
+import java.util.Random;
 import java.util.Set;
 
 import se.lu.lucs.dota2.framework.bot.Bot.Command;
@@ -27,11 +28,20 @@ public class Action
 	Noop NOOP;
 	AgentData data;
 	Set<BaseEntity> targets;
+	
+    private static final long attackAnimDelay = 200;
+    private static long attackDelay = 1300;
+    private long lastTime = 0;
+    Random rand = new Random();
+
+    public enum selectionType
+    {
+    	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, farmTargets, Brawl
+    }
 	public enum filterType
 	{
-		HEALTH, DISTANCE
+		HEALTH, DISTANCE, LEVEL
 	}
-
 	public Action(Attack a, Cast c, Move m, Noop n, Buy b, Sell s, AgentData d)
 	{
 		ATTACK = a;
@@ -42,32 +52,42 @@ public class Action
 		SELL = s;
 		data = d;		
 	}
-	public Command update(Hero agent, World world, UtilityScorer scorer, long lastTime, long attackDelay, long attackAnimDelay, AgentData d){
-		Command output = NOOP;
-		data = d;
+	public Command update(Hero agent, World world, UtilityScorer scorer){
 		BaseEntity e = null;
         long t = System.currentTimeMillis();
-	/*	BaseEntity closestEnemy = targetFilter(agent, 7, filterType.DISTANCE.ordinal());
-        if (e != null && distance(e, agent) < agent.getAttackRange() - 100)
+        Command out = NOOP;
+        BaseEntity closestHero = targetFilter(agent, selectionType.enemyHeroes.ordinal(), filterType.DISTANCE.ordinal());
+        if (closestHero != null && distance(agent, closestHero) < agent.getAttackRange())
         {
-        	System.out.println("dist to closest enemy" + distance(agent, closestEnemy));
+        	int abilityIndex = 0;
+        	if (agent.getMana() > agent.getMaxMana() * 0.5 &&
+        			agent.getAbilities().get(abilityIndex).getCooldownTimeRemaining() <= 0)
+        	{
+            	System.out.println("dist to closest hero" + distance(agent, closestHero));
+        		return castSpell(agent, closestHero, world, 0);
+        	}
+        	else {
+        		return attack(agent, world, closestHero); 
+        	}
 
-        	return retreat(world);
-        }*/
-
-
+        }
+        //targetFilter(agent, 0, filterType.HEALTH.ordinal());
+        // 					  ^-- determined by utility scorer mode.
         if(t - lastTime < attackAnimDelay)
         {
-        	e = targetFilter(agent, 0, filterType.HEALTH.ordinal());
-        //	return setAction(agent, world, e, 0);
+        	e = targetFilter(agent, selectionType.farmTargets.ordinal(), filterType.HEALTH.ordinal());
+        	
             if (e != null) {
-                return setAction(agent, world, e, 0);
+                if (e.getClass() == Hero.class ){
+                	System.out.println("entity is " + e.getClass());
+                }
+            	return setAction(agent, world, e, 0);
             }else {
-            	e = targetFilter(agent, 1, 0);
+            	e = targetFilter(agent, 1, filterType.HEALTH.ordinal());
             	if(e != null){
             		return attack(agent, world, e);
             	}else{
-            		e = targetFilter(agent, 2, 0);;
+            		e = targetFilter(agent, 2, filterType.HEALTH.ordinal());;
             		if(e != null){
             			return attack(agent, world, e);
             		}
@@ -78,8 +98,7 @@ public class Action
         if(t - lastTime > attackDelay)
         {
         	lastTime = t;
-        	
-        	e = targetFilter(agent, 0, filterType.HEALTH.ordinal());
+        	e = targetFilter(agent, selectionType.farmTargets.ordinal(), filterType.HEALTH.ordinal());
             if (e != null)
             {
             	return attack(agent, world, e);
@@ -93,19 +112,21 @@ public class Action
             		if(e != null){
             			return attack(agent, world, e);
             		}
-            		
             	}
             }
         }
 
-        output = goTo (scorer.getPoint(data.pos));
-
-		return output;
+       if (e == null)
+       {
+           out = goTo (scorer.getPoint(data.pos));
+       }
+       return out;
 	}
 	public Command setAction(Hero agent, World world, BaseEntity e, int mode)
 	{
 		//Modes -- Farming, Ganking, Team Fight?
-		if (e != null){
+		if (e != null)
+		{
 			return attack(agent, world, e);
 		}
 		else
@@ -131,15 +152,11 @@ public class Action
     	BaseEntity target = null;
     	target = targetFilter(agent, group, flag);
     	
-        if (target == null) 
+        if (target == null)
         {
             //Nothing in range
             System.out.println( "No enemy in range" );
             return NOOP;
-        }
-        if (distance(target, agent) < agent.getAttackRange() - 100)
-        {
-        	return retreat(world);
         }
         final int targetindex = world.indexOf( target );
         ATTACK.setTarget( targetindex );
@@ -197,13 +214,18 @@ public class Action
     			return targets;
     		case 3:
     			targets = data.friendlyCreeps;
-    			return targets;
+    			return targets;    			
     		case 4:
-    			targets = data.friendlyHeroes;
+    			//all enemies
+    			targets = data.enemyCreeps;
+    			targets.addAll(data.enemyTurrets);
+    			targets.addAll(data.enemyHeroes);
     			return targets;
     		case 5:
-    			targets = data.friendlyTurrets;
-    			
+    			//all allies
+    			targets = data.friendlyCreeps;
+    			targets.addAll(data.friendlyTurrets);
+    			targets.addAll(data.friendlyHeroes);
     			return targets;
     		case 6:
     			//Farming targets:
@@ -213,10 +235,12 @@ public class Action
     			targets.addAll(data.friendlyTurrets);
     			return targets;
     		case 7:
-    			//all enemies
+    			//Farming targets:
     			targets = data.enemyCreeps;
-    			targets.addAll(data.enemyTurrets);
     			targets.addAll(data.enemyHeroes);
+    			targets.addAll(data.friendlyCreeps);
+    			targets.addAll(data.enemyTurrets);
+    			targets.addAll(data.friendlyTurrets);
     			return targets;
     		default:
     			targets = null;
@@ -250,6 +274,12 @@ public class Action
 			                .findFirst()
 			                .orElse( null );
 		        break;
+		    //level based for heroes
+			case 2:
+				target = e.stream()
+							.sorted( (e1, e2) -> Integer.compare( ((Hero) e1).getLevel(), ((Hero) e2).getLevel()))
+							.findFirst()
+							.orElse(null);
 			default:
 				break;
 		}
