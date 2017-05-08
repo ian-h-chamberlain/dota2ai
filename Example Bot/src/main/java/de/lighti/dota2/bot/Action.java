@@ -39,7 +39,7 @@ public class Action
 
     public enum selectionType
     {
-    	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, farmTargets, Brawl
+    	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, allAllies, farmTargets, Brawl
     }
 	public enum filterType
 	{
