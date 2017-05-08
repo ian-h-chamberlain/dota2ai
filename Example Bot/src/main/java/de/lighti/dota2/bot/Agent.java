@@ -98,7 +98,7 @@ public class Agent extends BaseBot {
     	float[] moved = Vec3.sub(curPos, lastPos);
     	
     	// reward motion in positive direction
-    	lastReward = - moved[0] - moved[1];
+    	lastReward = moved[0] + moved[1];
     	System.out.println(moved[0] + "," + moved[1]);
     	
     	// outputs[0] = retreat
