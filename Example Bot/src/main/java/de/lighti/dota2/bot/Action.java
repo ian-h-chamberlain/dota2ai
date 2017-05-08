@@ -31,7 +31,10 @@ public class Action
 	
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
-    private long lastTime = 0;
+    
+    private long animCooldown = 0;
+    private long attackSpeedCooldown = 0; 
+    //private long lastTime = 0;
     Random rand = new Random();
 
     public enum selectionType
@@ -52,6 +55,11 @@ public class Action
 		SELL = s;
 		data = d;		
 	}
+	
+	public void waitForMS(long ms){
+		animCooldown = Math.max(System.currentTimeMillis() + ms, animCooldown);
+	}
+	
 	public Command update(Hero agent, World world, UtilityScorer scorer){
 		BaseEntity e = null;
         long t = System.currentTimeMillis();
@@ -73,6 +81,34 @@ public class Action
         }
         //targetFilter(agent, 0, filterType.HEALTH.ordinal());
         // 					  ^-- determined by utility scorer mode.
+       
+        if(t < animCooldown){//if we're animating do nothing so we don't cancel.
+        	return NOOP;
+        }
+        if(t > attackSpeedCooldown){
+        	//System.out.println("attacking.");
+        	attackSpeedCooldown = t + attackDelay;
+        	e = targetFilter(agent, selectionType.farmTargets.ordinal(), filterType.HEALTH.ordinal());
+        	
+            if (e != null) {
+                if (e.getClass() == Hero.class ){
+                	System.out.println("entity is " + e.getClass());
+                }
+            	return setAction(agent, world, e, 0);
+            }else {
+            	e = targetFilter(agent, 1, filterType.HEALTH.ordinal());
+            	if(e != null){
+            		return attack(agent, world, e);
+            	}else{
+            		e = targetFilter(agent, 2, filterType.HEALTH.ordinal());;
+            		if(e != null){
+            			return attack(agent, world, e);
+            		}
+            		
+            	}
+            }
+        }
+        /*
         if(t - lastTime < attackAnimDelay)
         {
         	e = targetFilter(agent, selectionType.farmTargets.ordinal(), filterType.HEALTH.ordinal());
@@ -114,7 +150,7 @@ public class Action
             		}
             	}
             }
-        }
+        }*/
 
        if (e == null)
        {
@@ -145,6 +181,7 @@ public class Action
         final int targetindex = world.indexOf( e );
         ATTACK.setTarget( targetindex );
 
+        this.waitForMS(attackAnimDelay);
         return ATTACK;
 	}
     public Command attack( Hero agent, World world, int group, int flag) 
@@ -160,7 +197,7 @@ public class Action
         }
         final int targetindex = world.indexOf( target );
         ATTACK.setTarget( targetindex );
-
+        this.waitForMS(attackAnimDelay);
         return ATTACK;
     }
     public Command castSpell( Hero agent, BaseEntity target, World world, int abilityIndex)

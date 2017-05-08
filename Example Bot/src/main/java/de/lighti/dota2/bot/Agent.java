@@ -25,7 +25,7 @@ public class Agent extends BaseBot {
     int levelIndex = 0;
 
     private int[] myLevels;
-
+    Hero agent;
     private Mode mode = Mode.ENABLED;
     private NeuralNetwork nn;
     private AgentData gameData;
@@ -112,7 +112,14 @@ public class Agent extends BaseBot {
     
     @Override
     public LevelUp levelUp() {
-    	LEVELUP.setAbilityIndex(levels[levelIndex++]);
+    	///Level = (Hero) world.getEntities().get( myIndex );
+    	if(agent == null){
+    		return null;
+    	}
+    	LEVELUP.setAbilityIndex(levels[levelIndex]);
+    	if(levelIndex < agent.getLevel()){
+    		levelIndex++;
+    	}
     	return LEVELUP;
     	/*
         LEVELUP.setAbilityIndex( -1 );
@@ -182,7 +189,7 @@ public class Agent extends BaseBot {
             return NOOP;
         }
 
-        final Hero agent = (Hero) world.getEntities().get( myIndex );
+        agent = (Hero) world.getEntities().get( myIndex );
         if(gameData == null)
         {
         	//put the gamedata and score initializer here so it can access the agent. 
