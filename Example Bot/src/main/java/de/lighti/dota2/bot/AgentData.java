@@ -145,7 +145,7 @@ public class AgentData {
 	
 	private float getReward(Hero agent){ //THIS SHOULD ONLY BE CALLED AT THE START OF PARSEGAMESTATE!
 		float reward = -1;
-		reward += agent.getGold() - gold;
+		reward += 10 * (agent.getGold() - gold);
 		reward += agent.getHealth() - hp;
 		//reward += 
 		return reward;
