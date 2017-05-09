@@ -19,6 +19,7 @@ import se.lu.lucs.dota2.framework.game.World;
 
 public class AgentData {
 	float hp, mp, range, gold, level;
+	int team;
 	float[] pos;
 	public float reward;
 	List<Float> abilityDamages;
@@ -93,11 +94,13 @@ public class AgentData {
 		coolDowns = new ArrayList<Float>();
 		enemyDistances = new ArrayList<Float>();
 		towerDistances = new HashMap<String, Float>();
+		
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
     	//health and mp are float percentages.
+		team = agent.getTeam();
 		reward = getReward(agent);
 		owner = agent;
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
