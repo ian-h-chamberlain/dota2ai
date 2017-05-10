@@ -62,13 +62,13 @@ public class Agent extends BaseBot {
     public void train(Hero agent, World world)
     {
     	float[] data = gameData.parseGameState(agent, world);
-    	
-    	System.out.print("data: [");
-    	for (int i=0; i<data.length; i++)
-    	{
-    		System.out.print(data[i] + ",");
-    	}
-    	System.out.println("]");
+//    	
+//    	System.out.print("data: [");
+//    	for (int i=0; i<data.length; i++)
+//    	{
+//    		System.out.print(data[i] + ",");
+//    	}
+//    	System.out.println("]");
     	
     	if (lastAction != null)
     	{

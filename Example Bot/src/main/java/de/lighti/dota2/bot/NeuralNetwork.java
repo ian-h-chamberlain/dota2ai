@@ -26,7 +26,7 @@ public class NeuralNetwork {
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 1f;
+	float epsilon = .01f;
 	float learningRate = 0.1f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
@@ -45,7 +45,7 @@ public class NeuralNetwork {
 					"" + numLayers, "" + numNodes, "" + inputs.length, "" + outputs.length,
 					graphFile);
 
-			System.out.println("*** GRAPH GENERATOR RUNNING ***\n");
+			//System.out.println("*** GRAPH GENERATOR RUNNING ***\n");
 			Process p = pb.start();
 			p.waitFor();
 
@@ -54,17 +54,17 @@ public class NeuralNetwork {
 			String line;
 			while ((line = bf.readLine()) != null)
 			{
-				System.out.println(line);
+				//System.out.println(line);
 			}
 			
 			// and input stream
 			bf = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			while ((line = bf.readLine()) != null)
 			{
-				System.out.println(line);
+				//System.out.println(line);
 			}
 
-			System.out.println("\n*** GRAPH GENERATOR COMPLETE ***");
+			//System.out.println("\n*** GRAPH GENERATOR COMPLETE ***");
 
 			// finally, read the results into our Tensorflow graph
 			File inFile = new File(graphFile);
@@ -158,7 +158,7 @@ public class NeuralNetwork {
 	// After taking an action, back propagate the reward for that action based on a new state
 	public void propagateReward(int[] action, float reward, float[] newInputs)
 	{
-		System.out.println("Propagating");
+		//System.out.println("Propagating");
 		numIterations++;
 		/*
 		if (numIterations % 1000 == 0)
@@ -201,7 +201,7 @@ public class NeuralNetwork {
 		
 		float loss = outs.get(0).floatValue();
 		
-		System.out.println("Loss: " + loss);
+		//System.out.println("Loss: " + loss);
 		
 		// TODO reduce epsilon over iterations
 	}
@@ -250,12 +250,12 @@ public class NeuralNetwork {
 				.get(0)
 				.copyTo(newQ);
 		
-		System.out.print("Q: ");
-		for (int i=0; i<outputs.length; i++)
-		{
-			System.out.print(newQ[0][i] + ",");
-		}
-		System.out.println();
+//		System.out.print("Q: ");
+//		for (int i=0; i<outputs.length; i++)
+//		{
+//			System.out.print(newQ[0][i] + ",");
+//		}
+//		System.out.println();
 		
 		return newQ[0];
 	}
