@@ -111,6 +111,9 @@ public class Agent extends BaseBot {
         if(e.getText().contains("epsilon")){
         	nn.epsilon = Float.parseFloat(e.getText().split(":")[1]);
         }
+        if(e.getText().contains("save")) {
+        	nn.saveWeights(e.getText().split(":")[1].trim());
+        }
     }
 
     @Override
