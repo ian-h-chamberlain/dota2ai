@@ -3,9 +3,8 @@
 *.tmp
 *.vcss_c
 *.bin
-dota2ai/server_log.txt
+dota2ai/
 *.graph
 *.soc
-dota2ai/rich_presence_persistent_data.txt
 new_bloom_2017/
 tutorial_basics/
