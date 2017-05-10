@@ -98,19 +98,22 @@ public class Action
         }
         if(t > attackSpeedCooldown)
         {
-        	attackSpeedCooldown = t + attackDelay;
         	e = targetFilter(agent, mode.ordinal());
             if (e != null) 
             {
             	 System.out.println(e.getName());
-            	return attack(agent, world, e);
+            	 Command c =attack(agent, world, e);
+            	 if(c != NOOP){
+            		 return c;
+            	 }
+            	 
             }
         } 
 
-       if (e == null)
-       {
-           out = goTo (scorer.getPoint(data.pos));
-       }
+       //if (e == null)
+       //{
+       out = goTo (scorer.getPoint(data.pos));
+       //}
        return out;
 	}
 	public Command attack( Hero agent, World world, BaseEntity e)
@@ -122,11 +125,30 @@ public class Action
             return NOOP;
         }
         final int targetindex = world.indexOf( e );
-        ATTACK.setTarget( targetindex );
-
-        this.waitForMS(attackAnimDelay);
+        if(isTargetable(agent,e,agent.getAttackRange())){
+            ATTACK.setTarget( targetindex );
+            this.waitForMS(attackAnimDelay);
+        	attackSpeedCooldown = System.currentTimeMillis() + attackDelay;
+        }else{
+        	System.out.println("can't attack this frame");
+        	return NOOP;
+        }
         return ATTACK;
 	}
+	
+	
+	public boolean isTargetable(Hero agent, BaseEntity e,float range){
+		BaseNPC target = (BaseNPC)e;
+		if(Vec3.distance(e.getOrigin(),agent.getOrigin()) > range){
+			return false;
+		}
+		if(target.getTeam() == agent.getTeam() && !target.isDeniable()){
+			return false;
+		}
+		return true;
+	}
+	
+	
 	public Command spellHandler(Hero agent, World world, BaseEntity e)
 	{
 		Command command = NOOP;
