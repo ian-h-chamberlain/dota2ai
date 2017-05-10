@@ -116,12 +116,7 @@ public class Action
 		{
 			if (data.gold >= itemCosts[buildIndex])
 			{
-				 out = buy(agent, world, buildOrder[buildIndex]);
-				 if (out.getClass() == BUY.getClass())
-				 {
-					 buildIndex++;
-					 return out;
-				 }
+				 return buy(agent, world, buildOrder[buildIndex]);
 			}
 		}
 		BaseEntity e = null;
@@ -441,6 +436,7 @@ public class Action
        if (dist < 200)
        {
            System.out.println("Buying" + item);
+           buildIndex++;
            BUY.setItem( item );
            data.inventory.add(item);
            return BUY;
