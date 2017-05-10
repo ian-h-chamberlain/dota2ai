@@ -23,6 +23,8 @@ public class AgentData {
 	float[] pos;
 	public float reward;
 	
+	public float[] lastData;
+	
 	int tookDamage = 0;
 	int damageCounter, framesToCheckDamage = 5;
 	
@@ -253,6 +255,8 @@ public class AgentData {
 		parsedData[41] = friendlyTower;
 		
 		parsedData[42] = tookDamage;
+		
+		lastData = parsedData.clone();
 		
 		return parsedData;
 	}

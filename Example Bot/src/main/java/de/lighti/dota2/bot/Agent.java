@@ -38,6 +38,8 @@ public class Agent extends BaseBot {
     float lastReward;
     public OutputProcess networkProcessor;
     
+    boolean isDead = true;
+    
     private float[] lastData;
     
     public static Agent instance = null;
@@ -135,12 +137,17 @@ public class Agent extends BaseBot {
         if (myIndex < 0) {
             //I'm probably dead
             //System.out.println( "I'm dead?" );
-        	if(gameData != null){
-        		gameData.reward(-1000);
+        	if (!isDead && gameData != null)
+        	{
+        		// propagate negative reward for death
+        		nn.propagateReward(lastAction, -1000, gameData.lastData);
+        		isDead = true;
         	}
+        	
             reset();
             return NOOP;
         }
+        isDead = false;
 
         agent = (Hero) world.getEntities().get( myIndex );
         if(gameData == null)
