@@ -2,6 +2,7 @@ package de.lighti.dota2.bot;
 
 import org.tensorflow.Graph;
 import org.tensorflow.Session;
+import org.tensorflow.Session.Runner;
 import org.tensorflow.Tensor;
 
 import java.io.BufferedReader;
@@ -17,8 +18,8 @@ public class NeuralNetwork {
 	// Tensorflow representation
 	Graph graph;
 	Session tfSession;
-	int numLayers = 1;
-	int numNodes = 60;
+	int numLayers = 5;
+	int numNodes = 75;
 	
 	int numIterations = 0;
 	
@@ -26,8 +27,8 @@ public class NeuralNetwork {
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 0.6f;
-	float learningRate = 0.1f;
+	float epsilon = 0.2f;
+	float learningRate = 0.001f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
 		
@@ -80,15 +81,42 @@ public class NeuralNetwork {
 		// initialize session
 		tfSession = new Session(graph);
 		
-		// Assign all variables in the graph
-		tfSession.runner()
-			.addTarget("weights0")
-			.addTarget("weights1")
-			.addTarget("randomUniform0")
-			.addTarget("randomUniform1")
-			.addTarget("assign0")
-			.addTarget("assign1")
+		// Assign input and output weights
+		Runner init = tfSession.runner()
+				.addTarget("weights_in")
+				.addTarget("random_weights_in")
+				.addTarget("assign_weights_in")
+				.addTarget("weights_out")
+				.addTarget("random_weights_out")
+				.addTarget("assign_weights_out");
+		
+		// and hidden layer weights
+		for (int i=0; i < numLayers - 1; i++)
+		{
+			init.addTarget("weights_" + i)
+				.addTarget("random_weights_" + i)
+				.addTarget("assign_weights_" + i);
+		}
+
+		init.run();
+		
+		// print out initial weights
+		List<Tensor> weights = tfSession.runner()
+			.fetch("weights_in")
+			.fetch("weights_0")
+			.fetch("weights_out")
 			.run();
+		
+		float[][] ins = new float[inputs.length][numNodes];
+		weights.get(0).copyTo(ins);
+		float[][] w0 = new float[numNodes][numNodes];
+		weights.get(1).copyTo(w0);
+		float[][] outs = new float[numNodes][outputs.length];
+		weights.get(2).copyTo(outs);
+		
+		System.out.println("Input weights:\n" + Arrays.deepToString(ins));
+		System.out.println("weights l0:\n" + Arrays.deepToString(w0));
+		System.out.println("Output weights:\n" + Arrays.deepToString(outs));
 	}
 
 	public void setInputs(float[] input)  
@@ -245,7 +273,7 @@ public class NeuralNetwork {
 
 		tfSession.runner()
 				.feed("inputs", in)
-				.fetch("qOut")
+				.fetch("result_weights_out")
 				.run()
 				.get(0)
 				.copyTo(newQ);
