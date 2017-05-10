@@ -22,13 +22,17 @@ public class AgentData {
 	int team;
 	float[] pos;
 	public float reward;
+	
+	int tookDamage = 0;
+	int damageCounter, framesToCheckDamage = 5;
+	
 	List<Float> abilityDamages;
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
 	HashMap<String, Float> towerDistances;
 	
 	BaseEntity owner;
-	public static int stateSize = 56; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
@@ -98,6 +102,10 @@ public class AgentData {
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
+		
+		// check if we took damage since last frame
+		float oldHP = hp;
+		
     	//obtain game data from agent
     	//health and mp are float percentages.
 		team = agent.getTeam();
@@ -109,6 +117,18 @@ public class AgentData {
     	gold = (float)agent.getGold();
     	level = (float)agent.getLevel();
     	pos = agent.getOrigin();
+    	
+    	// update tookDamage
+    	damageCounter++;
+    	if (Math.abs(oldHP - hp) > 0.001)
+    	{
+    		tookDamage = 1;
+    		damageCounter = 0;
+    	}
+    	else if (damageCounter > framesToCheckDamage)
+    	{
+    		tookDamage = 0;
+    	}
     	
 		abilityDamages.clear();
     	coolDowns.clear();
@@ -145,7 +165,6 @@ public class AgentData {
         	towerDistances.put(towers.get(i).getName(), distance(pos, towers.get(i).getOrigin()));
         }
         */
-    	
 
     	final Set<BaseEntity> ents = findEntitiesInRange(world, agent, range*10);
         
@@ -154,14 +173,14 @@ public class AgentData {
         Arrays.fill(nearbyEnemyCreeps, 0f);
         float[] nearbyEnemyHeroes = new float[8];
         Arrays.fill(nearbyEnemyHeroes, 0f);
-        float[] nearbyEnemyTowers = new float[8];
-        Arrays.fill(nearbyEnemyTowers, 0f);
+
         float[] nearbyFriendlyHeroes = new float[8];
         Arrays.fill(nearbyFriendlyHeroes, 0f);
         float[] nearbyFriendlyCreeps = new float[8];
         Arrays.fill(nearbyFriendlyCreeps, 0f);
-        float[] nearbyFriendlyTowers = new float[8];
-        Arrays.fill(nearbyFriendlyTowers, 0f);
+        
+        int enemyTower = 0;
+        int friendlyTower = 0;
         
         Iterator<BaseEntity> itr = ents.iterator();
         
@@ -181,7 +200,6 @@ public class AgentData {
 			
 			danger *= (float) ent.getHealth() / (float) ent.getMaxHealth();
 			
-			
         	if (enemyHeroes.contains(ent)) {
         		nearbyEnemyHeroes[slice] += danger;
         	}
@@ -189,7 +207,10 @@ public class AgentData {
         		nearbyEnemyCreeps[slice] += danger;
         	}
         	else if (enemyTurrets.contains(ent)) {
-        		nearbyEnemyTowers[slice] += danger;
+        		if (distance < ((Tower) ent).getAttackRange())
+        		{
+        			enemyTower = 1;
+        		}
         	}
         	else if (friendlyHeroes.contains(ent)) {
         		nearbyFriendlyHeroes[slice] += danger;
@@ -198,7 +219,10 @@ public class AgentData {
         		nearbyFriendlyCreeps[slice] += danger;
         	}
         	else if (friendlyTurrets.contains(ent)) {
-        		nearbyFriendlyTowers[slice] += danger;
+        		if (distance < ((Tower) ent).getAttackRange())
+        		{
+        			friendlyTower = 1;
+        		}
         	}
         }
         
@@ -212,15 +236,21 @@ public class AgentData {
 		parsedData[3] = level;
 		parsedData[4] = gold;
 		for (int i=0; i<3; i++)
+		{
 			parsedData[5+i] = pos[i];
-		for (int i=0; i<8; i++) {
+		}
+		for (int i=0; i<8; i++)
+		{
 			parsedData[8+i] = nearbyEnemyHeroes[i];
 			parsedData[16+i] = nearbyEnemyCreeps[i];
-			parsedData[24+i] = nearbyEnemyTowers[i];
-			parsedData[32+i] = nearbyFriendlyHeroes[i];
-			parsedData[40+i] = nearbyFriendlyCreeps[i];
-			parsedData[48+i] = nearbyFriendlyTowers[i];
+			parsedData[24+i] = nearbyFriendlyHeroes[i];
+			parsedData[32+i] = nearbyFriendlyCreeps[i];
 		}
+		
+		parsedData[40] = enemyTower;
+		parsedData[41] = friendlyTower;
+		
+		parsedData[42] = tookDamage;
 		
 		return parsedData;
 	}
