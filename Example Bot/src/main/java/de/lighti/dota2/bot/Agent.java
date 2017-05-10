@@ -24,9 +24,9 @@ public class Agent extends BaseBot {
     private static final int[] levels = {0,2,1,0,0,3,0,2,2,4,3,2,1,1,6,3,1,9,11};//The order for 
     int levelIndex = 0;
 
-    private int[] myLevels;
+    //private int[] myLevels;
     Hero agent;
-    private Mode mode = Mode.ENABLED;
+    //private Mode mode = Mode.ENABLED;
     private NeuralNetwork nn;
     private AgentData gameData;
     Random r = new Random();
@@ -45,7 +45,7 @@ public class Agent extends BaseBot {
     public Agent() {
     	instance = this;
        // System.out.println( "Creating Agent" );
-        myLevels = new int[5];
+        //myLevels = new int[5];
         //if(gameData == null){
         //	System.out.println("Building new game data");
         	//put the gamedata and score initializer here so it can access the agent. 
@@ -102,27 +102,23 @@ public class Agent extends BaseBot {
     	if(agent == null){
     		return null;
     	}
-    	LEVELUP.setAbilityIndex(levels[levelIndex]);
-    	if(levelIndex < agent.getLevel()){
-    		levelIndex++;
+    	if(agent.getLevel() == 1){
+    		levelIndex = 0;
     	}
+    	LEVELUP.setAbilityIndex(levelIndex);
     	return LEVELUP;
     }
 
     @Override
     public void onChat( ChatEvent e ) {
-        switch (e.getText()) {
-            case "lina go":
-                mode = Mode.ENABLED;
-                break;
-        }
+        
     }
 
     @Override
     public void reset()
     {
         System.out.println( "Resetting" );
-        myLevels = new int[5];
+        //myLevels = new int[5];
     }
 
     @Override
@@ -232,12 +228,12 @@ public class Agent extends BaseBot {
     			new Output(){
 					@Override
 					public void Run() {
-						scorer.currentMode = UtilityScorer.backOff;
+						scorer.currentMode = UtilityScorer.brawl;
 					}
 				},new Output(){
 					@Override
 					public void Run() {
-						scorer.currentMode = UtilityScorer.brawl;
+						scorer.currentMode = UtilityScorer.backOff;
 					}
 				},new Output(){
 					@Override

@@ -26,7 +26,7 @@ public class NeuralNetwork {
 	float[] outputs;
 	
 	float gamma = 0.99f;
-	float epsilon = 0.6f;
+	float epsilon = 1f;
 	float learningRate = 0.1f;
 
 	public NeuralNetwork(int numInputs, int numOutputs){
