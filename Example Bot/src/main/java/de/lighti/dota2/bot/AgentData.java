@@ -2,15 +2,11 @@ package de.lighti.dota2.bot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import se.lu.lucs.dota2.framework.game.Ability;
 import se.lu.lucs.dota2.framework.game.BaseEntity;
 import se.lu.lucs.dota2.framework.game.BaseNPC;
 import se.lu.lucs.dota2.framework.game.Hero;

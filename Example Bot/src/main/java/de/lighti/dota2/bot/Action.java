@@ -1,6 +1,5 @@
 package de.lighti.dota2.bot;
 
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import se.lu.lucs.dota2.framework.bot.Bot.Command;
