@@ -32,11 +32,13 @@ public class Action
 	
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
-    boolean BUYING = true;
+    boolean BUYING = false;
     private long animCooldown = 0;
     private long attackSpeedCooldown = 0;
     float[][] thresholdTable;
-    ArrayList<String> buildOrder = new ArrayList();
+    String[] buildOrder;
+    int buildIndex = 0;
+    int[] itemCosts;
     int boIndex = 0;
     //private long lastTime = 0;
     Random rand = new Random();
@@ -67,11 +69,32 @@ public class Action
 	}
 	private void init()
 	{
+
+		
+		//items to buy
+		buildOrder = new String[]
+				{
+					"item_wraith_band",
+					"item_power_treads",
+					"item_ring_of_aquila",
+					"item_maelstrom",
+					"item_ultimate_scepter",
+					"item_mjollnir"
+				};
+		
+		//cost of items in build order
+		itemCosts = new int[]
+				{
+						485,
+						1350,
+						985,
+						2800,
+						2900,
+						4200
+				};
 		//matches selection type index
 		//0.0f means zero priority 
 		//1.0 means full priority
-		buildOrder.add("item_slippers");
-		buildOrder.add("item_branches");
 		thresholdTable = new float[][]
 				{
 					{1.0f, 0.0f, 0.0f},
@@ -87,9 +110,23 @@ public class Action
 	}
 	public Command update(Hero agent, World world, UtilityScorer scorer)
 	{
+		Command out = NOOP;
+		//need input from mode or NN to set agent to buy items
+		if (BUYING)
+		{
+			if (data.gold >= itemCosts[buildIndex])
+			{
+				 out = buy(agent, world, buildOrder[buildIndex]);
+				 if (out.getClass() == BUY.getClass())
+				 {
+					 buildIndex++;
+					 return out;
+				 }
+			}
+		}
 		BaseEntity e = null;
         long t = System.currentTimeMillis();
-        Command out = NOOP;
+        
         //targetFilter(agent, 0, filterType.HEALTH.ordinal());
         // 					  ^-- determined by utility scorer mode.
        
@@ -387,7 +424,8 @@ public class Action
         
     }
     
-    private Command goTo(float[] pos){
+    private Command goTo(float[] pos)
+    {
     	//System.out.println(MOVE + " " + pos);
     	MOVE.setX(pos[0]);
     	MOVE.setY(pos[1]);
@@ -395,18 +433,16 @@ public class Action
     	return MOVE;
     }
 
-   public Command buy( Hero agent, World world ) {
+   public Command buy( Hero agent, World world, String item ) {
        final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals("ent_dota_fountain_good") )
                .findAny().get().getValue();
        float dist = Vec3.distance(fountain.getOrigin(), agent.getOrigin());
-       System.out.println("Distance to shop" + dist);
-       String item = buildOrder.get(0);
+       
        if (dist < 200)
        {
-
            System.out.println("Buying" + item);
            BUY.setItem( item );
-           buildOrder.remove(0);
+           data.inventory.add(item);
            return BUY;
        }
        else 
@@ -415,9 +451,10 @@ public class Action
        }
    }
    
-   public Command sell( int slot ) {
-       SELL.setSlot( 0 );
-
+   public Command sell( int slot ) 
+   {
+       SELL.setSlot( slot );
+       
        return SELL;
    }
 

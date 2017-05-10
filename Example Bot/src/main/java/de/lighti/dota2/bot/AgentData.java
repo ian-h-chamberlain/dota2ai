@@ -27,13 +27,10 @@ public class AgentData {
 	
 	int tookDamage = 0;
 	int damageCounter, framesToCheckDamage = 5;
-	
-	List<Float> abilityDamages;
-	List<Float> coolDowns;
-	List<Float> enemyDistances;
-	HashMap<String, Float> towerDistances;
+
 	public float nextReward = 0;
 	BaseEntity owner;
+	public ArrayList<String> inventory;
 	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	BaseNPC enemyHero;
@@ -98,11 +95,7 @@ public class AgentData {
 	
 	public AgentData()
 	{
-		abilityDamages = new ArrayList<Float>();
-		coolDowns = new ArrayList<Float>();
-		enemyDistances = new ArrayList<Float>();
-		towerDistances = new HashMap<String, Float>();
-		
+		inventory = new ArrayList<String>();
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
@@ -132,18 +125,6 @@ public class AgentData {
     	else if (damageCounter > framesToCheckDamage)
     	{
     		tookDamage = 0;
-    	}
-    	
-		abilityDamages.clear();
-    	coolDowns.clear();
-    	enemyDistances.clear();
-    	
-    	//Get a list of the first four abilities, the other indices are probably items.
-    	for (int i = 0; i < 4; i++)
-    	{
-    		Ability a = agent.getAbilities().get(i);
-    		abilityDamages.add((float)a.getAbilityDamage());
-    		coolDowns.add((float)a.getCooldownTimeRemaining());
     	}
     	/*Map<Integer, Ability> map = agent.getAbilities();
     	for (Map.Entry<Integer, Ability> entry : map.entrySet())
