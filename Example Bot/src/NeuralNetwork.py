@@ -21,32 +21,45 @@ numNodes = int(numNodes)
 numInputs = int(numInputs)
 numOutputs = int(numOutputs)
 
-if numLayers != 1:
-    print("No support for " + numLayers + " layers yet!")
+if numLayers < 1:
+    print("Cannot have less than 1 hidden layer!")
     sys.exit(1)
 
 # helpers for the shape of layers
 inputShape = [1, numInputs]
 outputShape = [1, numOutputs]
 intoHiddenShape = [numInputs, numNodes]
+fullHiddenShape = [numNodes, numNodes]
 outHiddenShape = [numNodes, numOutputs]
 
 #These lines establish the feed-forward part of the network used to choose actions
 inputs = tf.placeholder(shape=inputShape,dtype=tf.float32, name="inputs")
 
-w1 = tf.Variable(tf.zeros(intoHiddenShape), name="weights0")
-w2 = tf.Variable(tf.zeros(outHiddenShape), name = "weights1")
+# initialize Variable objects for each layer's weights
+hiddenLayers = []
 
-# need to explicitly assign so we can initialize in Java
-tf.assign(w1, tf.random_uniform(
-        intoHiddenShape, 0, 0.01, name="randomUniform0"
-        ), name="assign0")
-        
-tf.assign(w2, tf.random_uniform(
-        outHiddenShape, 0, 0.01, name="randomUniform1"
-        ), name="assign1")
+hiddenLayers.append(tf.Variable(tf.zeros(intoHiddenShape), name="weights_in"))
+
+for i in range(numLayers - 1):
+    hiddenLayers.append(
+        tf.Variable(tf.zeros(fullHiddenShape), name=("weights_" + str(i)))
+    )
+
+hiddenLayers.append(tf.Variable(tf.zeros(outHiddenShape), name = "weights_out"))
+
+layersToHere = inputs
+
+# need to explicitly make assign operations so we can initialize in Java
+for w in hiddenLayers:
+    nameSuffix = w.name.split(':')[0]
+    tf.assign(w,
+            tf.random_uniform(w.shape, -0.1, 0.1, name=("random_" + nameSuffix)),
+            name=("assign_" + nameSuffix))
     
-qOut = tf.matmul(tf.matmul(inputs, w1), w2, name="qOut")
+    # and keep multiplying layers together for the final qOut
+    layersToHere = tf.matmul(layersToHere, w, name=("result_" + nameSuffix))
+
+qOut = layersToHere
 predict = tf.argmax(qOut,1, name="predict")
 
 # build the training model using new q-values and loss function
