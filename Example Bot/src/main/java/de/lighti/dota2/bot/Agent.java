@@ -105,7 +105,12 @@ public class Agent extends BaseBot {
 
     @Override
     public void onChat( ChatEvent e ) {
-        
+        if(e.getText().contains("learning rate")){
+        	nn.learningRate = Float.parseFloat(e.getText().split(":")[1]);
+        }
+        if(e.getText().contains("epsilon")){
+        	nn.epsilon = Float.parseFloat(e.getText().split(":")[1]);
+        }
     }
 
     @Override

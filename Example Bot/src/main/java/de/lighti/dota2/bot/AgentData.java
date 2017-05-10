@@ -23,10 +23,11 @@ public class AgentData {
 	
 	int tookDamage = 0;
 	int damageCounter, framesToCheckDamage = 5;
-
+	public float[][] shopLocations;
 	public float nextReward = 0;
 	BaseEntity owner;
 	public ArrayList<String> inventory;
+	public int inventoryValue = 0;
 	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	BaseNPC enemyHero;
@@ -92,6 +93,18 @@ public class AgentData {
 	public AgentData()
 	{
 		inventory = new ArrayList<String>();
+		
+		shopLocations = new float[][]
+				{
+					//radiant secret
+					{-4726.10f, 1100f, 0f},
+					//dire secret
+					{4792f, -1700f, 0f },
+					//bot side shop
+					{7168f, -4200f, 0f},
+					//top side shop
+					{-7150f, 4000f, 0f}
+				};
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
