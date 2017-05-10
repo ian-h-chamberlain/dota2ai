@@ -30,9 +30,11 @@ public class AgentData {
 	List<Float> coolDowns;
 	List<Float> enemyDistances;
 	HashMap<String, Float> towerDistances;
-	
+	public float nextReward = 0;
 	BaseEntity owner;
 	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	
+	BaseNPC enemyHero;
 	
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
@@ -255,14 +257,35 @@ public class AgentData {
 		return parsedData;
 	}
 	
+	public void reward(float reward){
+		nextReward += reward;
+	}
 	
 	private float getReward(Hero agent){ //THIS SHOULD ONLY BE CALLED AT THE START OF PARSEGAMESTATE!
 		float reward = -1;
-		reward += 10 * (agent.getGold() - gold);
-		reward += agent.getHealth() - hp;
-		if(agent.getHealth() > agent.getMaxHealth()/2){
-			reward += Vec3.distance(agent.getOrigin(), new float[]{-8000,-8000})/ 16000;
+		reward += nextReward;
+		nextReward = 0;
+		
+		BaseNPC closestEnemy = (BaseNPC)getNearest(enemyHeroes, agent.getOrigin());
+		float damageReward = 0;
+		if(enemyHero != null && closestEnemy != null){
+			
+			if(closestEnemy.getName().equals(enemyHero.getName())){
+				damageReward = enemyHero.getHealth() - closestEnemy.getHealth();
+			}
 		}
+		if(pos != null && Vec3.distance(pos, agent.getOrigin()) < 1){
+			System.out.println("sitting");
+			reward -= 10;
+		}
+		enemyHero = closestEnemy;
+		reward += damageReward;
+		reward += (agent.getGold() - gold);
+		reward += (((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300;
+		/*if(agent.getHealth() > agent.getMaxHealth()/2){
+			reward += Vec3.distance(agent.getOrigin(), new float[]{-8000,-8000})/ 16000;
+		}*/
+		System.out.println("Reward: " + reward + " from " + damageReward + ", " + (10 * (agent.getGold() - gold)) + ", " + ((((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300));
 		//reward += 
 		return reward;
 	}

@@ -135,6 +135,9 @@ public class Agent extends BaseBot {
         if (myIndex < 0) {
             //I'm probably dead
             //System.out.println( "I'm dead?" );
+        	if(gameData != null){
+        		gameData.reward(-1000);
+        	}
             reset();
             return NOOP;
         }
@@ -259,6 +262,16 @@ public class Agent extends BaseBot {
 					@Override
 					public void Run() {
 						scorer.currentMode = UtilityScorer.siege;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.invade;
+					}
+				},new Output(){
+					@Override
+					public void Run() {
+						scorer.currentMode = UtilityScorer.goHome;
 					}
 				}
     		},

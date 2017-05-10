@@ -24,10 +24,12 @@ public class UtilityScorer {
 		preferredX,preferredY, preferredMult,dist,stickiness
 	}
 	public static final float[] farm = new float[]{-1000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,-.01f,0};
+	public static final float[] goHome = new float[]{0,0,0,0,0,0,0, -8000,-8000 ,-1f,0,0};
+	public static final float[] invade = new float[]{0,0,0,0,0,0,0, 8000,8000 ,-1f,0,0};
 
 	public static final float[] laneSwitch = new float[]{-2000,20,1000,2,-1,-2,0, 0,0 ,-.0001f,.05f,1500};
-	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,-.0001f,-.01f,0};
-	public static final float[] guard = new float[]{0,5,1000,-5,-2,0,-5, -6000,-6000 ,-.0001f,0,0};
+	public static final float[] backOff = new float[]{0,5,-1000,5,-5,-1,-5, -6000,-6000 ,0,-.01f,0};
+	public static final float[] guard = new float[]{-1,5,3000,0,-2,0,-5, -6000,-6000 ,0,0,0};
 
 	public static final float[] brawl = new float[]{-300,2,1000,-5,-1,-2,0, 0,0 ,-.0001f,-.01f,0};
 	
