@@ -1,5 +1,6 @@
 package de.lighti.dota2.bot;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import se.lu.lucs.dota2.framework.bot.Bot.Command;
@@ -31,16 +32,18 @@ public class Action
 	
     private static final long attackAnimDelay = 200;
     private static long attackDelay = 1300;
-    
+    boolean BUYING = true;
     private long animCooldown = 0;
     private long attackSpeedCooldown = 0;
     float[][] thresholdTable;
+    ArrayList<String> buildOrder = new ArrayList();
+    int boIndex = 0;
     //private long lastTime = 0;
     Random rand = new Random();
-    public selectionType mode = selectionType.farmTargets;
+    public selectionType mode = selectionType.Farm;
     public enum selectionType
     {
-    	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, allAllies, farmTargets, Brawl, Push
+    	enemyCreeps, enemyHeroes, enemyTurrets, allyCreeps, allEnemies, allAllies, Farm, Brawl, Push
     }
 	public enum filterType
 	{
@@ -56,18 +59,20 @@ public class Action
 		BUY = b;
 		SELL = s;
 		data = d;		
-		thresholdTable = populateThresholds();
+		init();
 	}
 	
 	public void waitForMS(long ms){
 		animCooldown = Math.max(System.currentTimeMillis() + ms, animCooldown);
 	}
-	private float[][] populateThresholds()
+	private void init()
 	{
 		//matches selection type index
 		//0.0f means zero priority 
 		//1.0 means full priority
-		float[][] thresholds = new float[][]
+		buildOrder.add("item_slippers");
+		buildOrder.add("item_branches");
+		thresholdTable = new float[][]
 				{
 					{1.0f, 0.0f, 0.0f},
 					{0.0f, 1.0f, 0.0f},
@@ -79,10 +84,9 @@ public class Action
 					{0.7f, 1.0f, 0.3f},
 					{1.0f, 0.0f, 1.0f}
 				};
-		return thresholds;
-
 	}
-	public Command update(Hero agent, World world, UtilityScorer scorer){
+	public Command update(Hero agent, World world, UtilityScorer scorer)
+	{
 		BaseEntity e = null;
         long t = System.currentTimeMillis();
         Command out = NOOP;
@@ -92,15 +96,16 @@ public class Action
         if(t < animCooldown){//if we're animating do nothing so we don't cancel.
         	return NOOP;
         }
-        if(t > attackSpeedCooldown){
-        	//System.out.println("attacking.");
+        if(t > attackSpeedCooldown)
+        {
         	attackSpeedCooldown = t + attackDelay;
         	e = targetFilter(agent, mode.ordinal());
             if (e != null) 
             {
+            	 System.out.println(e.getName());
             	return attack(agent, world, e);
             }
-        }
+        } 
 
        if (e == null)
        {
@@ -110,18 +115,12 @@ public class Action
 	}
 	public Command attack( Hero agent, World world, BaseEntity e)
 	{
-
         if (e == null) 
         {
             //Nothing in range
             System.out.println( "No enemy in range" );
             return NOOP;
         }
-       if (spellHandler(agent, world, e) != null)
-       {
-    	   return spellHandler(agent, world, e);
-       }
-
         final int targetindex = world.indexOf( e );
         ATTACK.setTarget( targetindex );
 
@@ -134,11 +133,9 @@ public class Action
 		if (e.getClass() == Hero.class)
 		{
 			int ult = 3;
-			if (agent.getAbilities().get(ult).getLevel() != 0)
-			{
-				if (agent.getMana() >= agent.getMaxMana() * 0.2)
-					command = castSpell(agent, e, world, ult);
-			}
+			if (agent.getMana() >= agent.getMaxMana() * 0.3)
+				command = castSpell(agent, e, world, ult);
+			
 
 		}
 		
@@ -187,7 +184,7 @@ public class Action
 		BaseEntity target = null;
 		if (thresholdTable == null)
 		{
-			thresholdTable = populateThresholds();
+			init();
 		}
 		filterType[] filters;
 		//Threshold values based on percentage health values now
@@ -200,17 +197,21 @@ public class Action
 			
 			filters = new filterType[] { filterType.HEALTH, filterType.DISTANCE};
 			target = filterSet(enemyTargets, thresholdTable[mode], filters);
-			
+
 			if (target == null)
 			{
 				Set<BaseEntity> allyTargets = targetType(5);
 				target = filterSet(allyTargets, thresholdTable[mode], filters);
 			}
+			else
+			{
+				return target;
+			}
 		}
 		else
 		{
 			Set<BaseEntity> targets = targetType(mode);
-			filters = new filterType[] { filterType.HEALTH, filterType.DISTANCE};
+			filters = new filterType[] { filterType.HEALTH };
 			target = filterSet(targets, thresholdTable[mode], filters);
 		}
 
@@ -262,6 +263,9 @@ public class Action
 			if (target == null)
 				target = applyHealthFilter(set, Tower.class, thresholds);
 	    	}
+			if (target != null)
+				return target;
+
     	else if (contains(filters, filterType.DISTANCE))
     	{
         	target = set.stream()
@@ -360,6 +364,7 @@ public class Action
         return goTo(targetPos);
         
     }
+    
     private Command goTo(float[] pos){
     	//System.out.println(MOVE + " " + pos);
     	MOVE.setX(pos[0]);
@@ -368,10 +373,24 @@ public class Action
     	return MOVE;
     }
 
-   public Command buy( String item ) {
-       BUY.setItem( item );
+   public Command buy( Hero agent, World world ) {
+       final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals("ent_dota_fountain_good") )
+               .findAny().get().getValue();
+       float dist = Vec3.distance(fountain.getOrigin(), agent.getOrigin());
+       System.out.println("Distance to shop" + dist);
+       String item = buildOrder.get(0);
+       if (dist < 200)
+       {
 
-       return BUY;
+           System.out.println("Buying" + item);
+           BUY.setItem( item );
+           buildOrder.remove(0);
+           return BUY;
+       }
+       else 
+       {
+    	  return retreat(world);
+       }
    }
    
    public Command sell( int slot ) {
