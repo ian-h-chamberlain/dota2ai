@@ -17,6 +17,9 @@ function Dota2AI:OnGameRulesStateChange()
   elseif nNewState == DOTA_GAMERULES_STATE_PRE_GAME then
     print( "OnGameRulesStateChange: Pre Game Selection" )
     SendToServerConsole( "dota_dev forcegamestart" ) -- Skip the draft process
+  elseif nNewState == DOTA_GAMERULES_STATE_POST_GAME then
+    print( "OnGameRulesStateChange: Game Ended")
+	SendToServerConsole( "dota_launch_custom_game dota2ai dota")
   elseif nNewState == DOTA_GAMERULES_STATE_GAME_IN_PROGRESS then
     print( "OnGameRulesStateChange: Game In Progress" )
 	BotPick()
@@ -35,7 +38,7 @@ function Dota2AI:OnGameRulesStateChange()
     
     --Tutorial:AddBot( sHeroSelection[6], "top", "easy", false );
     --Tutorial:AddBot( sHeroSelection[7], "top", "easy", false );
-    Tutorial:AddBot( Dota2AI.sHeroSelection[8], "mid", "easy", false );
+    Tutorial:AddBot( "npc_dota_hero_zuus", "mid", "medium", false );
     --Tutorial:AddBot( sHeroSelection[9], "bot", "easy", false );
     --Tutorial:AddBot( sHeroSelection[10], "bot", "easy", false );    
   end    
