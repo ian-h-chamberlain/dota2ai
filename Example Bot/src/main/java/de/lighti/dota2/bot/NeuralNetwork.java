@@ -6,12 +6,17 @@ import org.tensorflow.Session.Runner;
 import org.tensorflow.Tensor;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class NeuralNetwork {
 
@@ -32,6 +37,83 @@ public class NeuralNetwork {
 
 	public NeuralNetwork(int numInputs, int numOutputs){
 		
+		initGraph(numInputs, numOutputs);
+		
+		// Assign input and output weights
+		Runner init = tfSession.runner()
+				.addTarget("weights_in")
+				.addTarget("random_weights_in")
+				.addTarget("assign_weights_in")
+				.addTarget("weights_out")
+				.addTarget("random_weights_out")
+				.addTarget("assign_weights_out");
+		
+		// and hidden layer weights
+		for (int i=0; i < numLayers - 1; i++)
+		{
+			init.addTarget("weights_" + i)
+				.addTarget("random_weights_" + i)
+				.addTarget("assign_weights_" + i);
+		}
+
+		init.run();
+	}
+
+	// load a neural network from a file
+	public NeuralNetwork(String filename, int numInputs, int numOutputs)
+	{
+		initGraph(numInputs, numOutputs);
+		
+		List<Tensor> weights = new ArrayList<Tensor>();
+		
+		ObjectInputStream ois = null;
+		FileInputStream fis = null;
+		float[][] blah = null;
+		try {
+			fis = new FileInputStream(filename);
+			ois = new ObjectInputStream(fis);
+			do {
+				blah = (float[][]) ois.readObject();
+				
+				if (blah != null) {
+					weights.add(Tensor.create(blah));
+				}
+			} while (blah != null);
+		}
+		catch (EOFException e) { } // Once we reach EOF we're done
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			if (ois != null) {
+				try {
+					ois.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		System.out.println(weights.size());
+
+		// pass in our Tensor values to the graph
+		Runner r = tfSession.runner();
+		r.feed("phold_weights_in", weights.get(0))
+			.addTarget("assign_phold_weights_in");
+		r.feed("phold_weights_out", weights.get(1))
+			.addTarget("assign_phold_weights_out");
+		
+		for (int i=2; i<weights.size(); i++)
+		{
+			r.feed("phold_weights_" + (i - 2), weights.get(i))
+				.addTarget("assign_phold_weights_" + (i - 2));
+		}
+		
+		r.run();
+	}
+	
+	private void initGraph(int numInputs, int numOutputs)
+	{
 		outputs = new float[numOutputs];
 		inputs = new float[numInputs];
 		
@@ -77,46 +159,50 @@ public class NeuralNetwork {
 		{
 			e.printStackTrace();
 		}
-		
+
 		// initialize session
 		tfSession = new Session(graph);
+	}
+	
+	// store the network weights as a file
+	public void saveWeights(String filename)
+	{
+		Runner r = tfSession.runner();
 		
-		// Assign input and output weights
-		Runner init = tfSession.runner()
-				.addTarget("weights_in")
-				.addTarget("random_weights_in")
-				.addTarget("assign_weights_in")
-				.addTarget("weights_out")
-				.addTarget("random_weights_out")
-				.addTarget("assign_weights_out");
+		r.fetch("weights_in")
+			.fetch("weights_out");
 		
-		// and hidden layer weights
-		for (int i=0; i < numLayers - 1; i++)
+		for (int i=0; i<numLayers - 1; i++)
 		{
-			init.addTarget("weights_" + i)
-				.addTarget("random_weights_" + i)
-				.addTarget("assign_weights_" + i);
+			r.fetch("weights_" + i);
 		}
-
-		init.run();
 		
-		// print out initial weights
-		List<Tensor> weights = tfSession.runner()
-			.fetch("weights_in")
-			.fetch("weights_0")
-			.fetch("weights_out")
-			.run();
+		List<Tensor> weights = r.run();
 		
-		float[][] ins = new float[inputs.length][numNodes];
-		weights.get(0).copyTo(ins);
-		float[][] w0 = new float[numNodes][numNodes];
-		weights.get(1).copyTo(w0);
-		float[][] outs = new float[numNodes][outputs.length];
-		weights.get(2).copyTo(outs);
-		
-		System.out.println("Input weights:\n" + Arrays.deepToString(ins));
-		System.out.println("weights l0:\n" + Arrays.deepToString(w0));
-		System.out.println("Output weights:\n" + Arrays.deepToString(outs));
+		ObjectOutputStream out = null;
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(filename);
+			out = new ObjectOutputStream(fos);
+			for (int i=0; i<weights.size(); i++) {
+				long[] s = weights.get(i).shape();
+				float[][] t = new float[(int) s[0]][(int) s[1]];
+				weights.get(i).copyTo(t);
+				out.writeObject(t);
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally {
+			if (out != null) {
+				try {
+					out.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	public void setInputs(float[] input)  
@@ -124,79 +210,12 @@ public class NeuralNetwork {
 		inputs = input;
 	}
 	
-	// Run a series of fake iterations to test Q-learning
-	public void testQ(int iters)
-	{
-		// not actually using real input yet
-		setInputs(new float[]{
-			1.0f, 1.5f, -0.5f, 1.0f,
-		});
-		Random rn = new Random();
-		
-		for (int i=0; i<iters; i++)
-		{
-			int act = getAction();
-			
-			if (rn.nextFloat() < epsilon)
-			{
-				act = rn.nextInt(outputs.length);
-			}
-			
-			float[] targetQ = getQ();
-			
-			// set new state based on action
-			if (act == 0)
-				inputs[0] += 0.01f;
-			else if (act == 1)
-				inputs[0] -= 0.01f;
-
-			float r = fakeReward(act);
-			
-			// propagateReward(targetQ, act, r);
-		}
-		
-		System.out.print("[");
-		for (int i=0; i<inputs.length; i++)
-		{
-			System.out.print(inputs[i] + ",");
-		}
-		System.out.println("]");
-	}
-	
-	private float fakeReward(int action)
-	{
-		if (action == 0)
-		{
-			if (inputs[0] <= 1.0f)
-				return 10;
-			else
-				return -10;
-		}
-		else if (action == 1)
-		{
-			if (inputs[0] >= 1.0f)
-				return 10;
-			else
-				return -10;
-		}
-		else
-			return 0;
-	}
-	
 	// After taking an action, back propagate the reward for that action based on a new state
 	public void propagateReward(int[] action, float reward, float[] newInputs)
 	{
 		System.out.println("Propagating");
 		numIterations++;
-		/*
-		if (numIterations % 1000 == 0)
-		{
-			epsilon -= 0.05f * (int) (numIterations / 1000);
-			if (epsilon < 0.0f)
-				epsilon = 0.0f;
-			System.err.println("lowering epsilon");
-		}
-		*/
+
 		float[] targetQ = getQ();
 		float[] oldInputs = inputs;
 		setInputs(newInputs);

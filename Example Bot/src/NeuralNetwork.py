@@ -55,6 +55,12 @@ for w in hiddenLayers:
     tf.assign(w,
             tf.random_uniform(w.shape, -0.1, 0.1, name=("random_" + nameSuffix)),
             name=("assign_" + nameSuffix))
+            
+    # add a way to manually assign weights
+    tf.assign(w,
+            tf.placeholder(shape=w.shape, dtype=tf.float32, name=("phold_" + nameSuffix)),
+            name=("assign_phold_" + nameSuffix)
+    )
     
     # and keep multiplying layers together for the final qOut
     layersToHere = tf.matmul(layersToHere, w, name=("result_" + nameSuffix))
