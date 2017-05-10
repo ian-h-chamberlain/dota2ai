@@ -1,8 +1,10 @@
 package de.lighti.dota2.bot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -17,6 +19,7 @@ import se.lu.lucs.dota2.framework.game.World;
 
 public class AgentData {
 	float hp, mp, range, gold, level;
+	int team;
 	float[] pos;
 	public float reward;
 	List<Float> abilityDamages;
@@ -25,7 +28,7 @@ public class AgentData {
 	HashMap<String, Float> towerDistances;
 	
 	BaseEntity owner;
-	public int stateSize = 8; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	public static int stateSize = 56; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	public Set<BaseEntity> enemyHeroes;
 	public Set<BaseEntity> friendlyHeroes;
@@ -91,11 +94,13 @@ public class AgentData {
 		coolDowns = new ArrayList<Float>();
 		enemyDistances = new ArrayList<Float>();
 		towerDistances = new HashMap<String, Float>();
+		
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
     	//obtain game data from agent
     	//health and mp are float percentages.
+		team = agent.getTeam();
 		reward = getReward(agent);
 		owner = agent;
     	hp = (float)agent.getHealth() / (float)agent.getMaxHealth();
@@ -120,25 +125,103 @@ public class AgentData {
     	for (Map.Entry<Integer, Ability> entry : map.entrySet())
     	{
     		System.out.println(entry.getKey() + "/" + entry.getValue());
-    	}*/
+    	}
     	
     	 //Obtain entities in a wide range (Attack Range * 10)
         final Set<BaseEntity> e = findEntitiesInRange( world, agent, range*10 ).stream().filter( p -> p instanceof BaseNPC )
                 .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
      
+        
+        
         //Filter enemies in range (
         final ArrayList<BaseEntity> enemies = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).collect(Collectors.toList());
         final ArrayList<BaseEntity> towers = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).filter( f -> f.getClass() == Tower.class).collect(Collectors.toList());
+        
+        
         
         //Tower info, add all distances from visible enemy towers to this hash map.
         for (int i = 0; i < towers.size(); i++)
         {
         	towerDistances.put(towers.get(i).getName(), distance(pos, towers.get(i).getOrigin()));
         }
+        */
+    	
+
+    	final Set<BaseEntity> ents = findEntitiesInRange(world, agent, range*10);
+        
+        // determine what enemies are in what areas
+        float[] nearbyEnemyCreeps = new float[8];
+        Arrays.fill(nearbyEnemyCreeps, 0f);
+        float[] nearbyEnemyHeroes = new float[8];
+        Arrays.fill(nearbyEnemyHeroes, 0f);
+        float[] nearbyEnemyTowers = new float[8];
+        Arrays.fill(nearbyEnemyTowers, 0f);
+        float[] nearbyFriendlyHeroes = new float[8];
+        Arrays.fill(nearbyFriendlyHeroes, 0f);
+        float[] nearbyFriendlyCreeps = new float[8];
+        Arrays.fill(nearbyFriendlyCreeps, 0f);
+        float[] nearbyFriendlyTowers = new float[8];
+        Arrays.fill(nearbyFriendlyTowers, 0f);
+        
+        Iterator<BaseEntity> itr = ents.iterator();
+        
+        while (itr.hasNext())
+        {
+        	BaseEntity ent = itr.next();
+        	
+        	// calculate which slice the enemy is in
+			float angle = Vec3.angle(Vec3.sub(ent.getOrigin(), agent.getOrigin()));
+			angle += Math.PI;
+			
+			int slice = (int) (angle / (Math.PI / 4f));
+			
+			
+			float distance = Vec3.distance(ent.getOrigin(), agent.getOrigin());
+			float danger = (float) Math.exp((double) (-distance / range));
+			
+			danger *= (float) ent.getHealth() / (float) ent.getMaxHealth();
+			
+			
+        	if (enemyHeroes.contains(ent)) {
+        		nearbyEnemyHeroes[slice] += danger;
+        	}
+        	else if (enemyCreeps.contains(ent)) {
+        		nearbyEnemyCreeps[slice] += danger;
+        	}
+        	else if (enemyTurrets.contains(ent)) {
+        		nearbyEnemyTowers[slice] += danger;
+        	}
+        	else if (friendlyHeroes.contains(ent)) {
+        		nearbyFriendlyHeroes[slice] += danger;
+        	}
+        	else if (friendlyCreeps.contains(ent)) {
+        		nearbyFriendlyCreeps[slice] += danger;
+        	}
+        	else if (friendlyTurrets.contains(ent)) {
+        		nearbyFriendlyTowers[slice] += danger;
+        	}
+        }
         
         //Package data and send to NN
         //I can make this more organized if necessary.
-		float parsedData[] = { hp, mp, range, level, gold, pos[0], pos[1], pos[2] };
+		float parsedData[] = new float[stateSize];
+		
+		parsedData[0] = hp;
+		parsedData[1] = mp;
+		parsedData[2] = range;
+		parsedData[3] = level;
+		parsedData[4] = gold;
+		for (int i=0; i<3; i++)
+			parsedData[5+i] = pos[i];
+		for (int i=0; i<8; i++) {
+			parsedData[8+i] = nearbyEnemyHeroes[i];
+			parsedData[16+i] = nearbyEnemyCreeps[i];
+			parsedData[24+i] = nearbyEnemyTowers[i];
+			parsedData[32+i] = nearbyFriendlyHeroes[i];
+			parsedData[40+i] = nearbyFriendlyCreeps[i];
+			parsedData[48+i] = nearbyFriendlyTowers[i];
+		}
+		
 		return parsedData;
 	}
 	

@@ -8,6 +8,10 @@ public class Vec3 {
         return (float) Math.hypot( posB[0] - posA[0], posB[1] - posA[1] );
     }
 	
+	public static float angle(float[] vec) {
+		return (float) Math.atan2(vec[1], vec[0]);
+	}
+	
 	public static float magnitude(float[] vec){
 		return (float) Math.hypot(vec[0], vec[1]);
 	}

@@ -72,8 +72,6 @@ public class Agent extends BaseBot {
     	
     	if (lastAction != null)
     	{
-			System.out.println("Action, reward: " + lastAction + "," + lastReward );
-
 			// update the network with the previous reward and new state
 			nn.propagateReward(lastAction, lastReward, data);
 		}
@@ -82,7 +80,6 @@ public class Agent extends BaseBot {
         
     	float[] outputs = nn.getQ(data);
     	
-    	System.out.println(outputs[0]);
     	int[] chosenAction;
     	if (r.nextFloat() < nn.epsilon) {
     		chosenAction = this.networkProcessor.pickRandom();
