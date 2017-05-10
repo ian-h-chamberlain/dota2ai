@@ -231,7 +231,7 @@ public class AgentData {
 		reward += 10 * (agent.getGold() - gold);
 		reward += agent.getHealth() - hp;
 		if(agent.getHealth() > agent.getMaxHealth()/2){
-			reward += Vec3.distance(pos, new float[]{-8000,-8000})/ 16000;
+			reward += Vec3.distance(agent.getOrigin(), new float[]{-8000,-8000})/ 16000;
 		}
 		//reward += 
 		return reward;
