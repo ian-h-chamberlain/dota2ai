@@ -38,7 +38,7 @@ function Dota2AI:OnGameRulesStateChange()
     
     --Tutorial:AddBot( sHeroSelection[6], "top", "easy", false );
     --Tutorial:AddBot( sHeroSelection[7], "top", "easy", false );
-    Tutorial:AddBot( Dota2AI.sHeroSelection[8], "mid", "easy", false );
+    Tutorial:AddBot( "npc_dota_hero_zuus", "mid", "medium", false );
     --Tutorial:AddBot( sHeroSelection[9], "bot", "easy", false );
     --Tutorial:AddBot( sHeroSelection[10], "bot", "easy", false );    
   end    
