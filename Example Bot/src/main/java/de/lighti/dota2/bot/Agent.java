@@ -106,13 +106,19 @@ public class Agent extends BaseBot {
     @Override
     public void onChat( ChatEvent e ) {
         if(e.getText().contains("learning rate")){
-        	nn.learningRate = Float.parseFloat(e.getText().split(":")[1]);
+        	nn.learningRate = Float.parseFloat(e.getText().split("=")[1]);
         }
         if(e.getText().contains("epsilon")){
-        	nn.epsilon = Float.parseFloat(e.getText().split(":")[1]);
+        	nn.epsilon = Float.parseFloat(e.getText().split("=")[1]);
         }
         if(e.getText().contains("save")) {
-        	nn.saveWeights(e.getText().split(":")[1].trim());
+        	nn.saveWeights(e.getText().split("=")[1].trim());
+        }
+        if(e.getText().contains("load")) {
+        	// load a previously saved weight file
+        	String filename = e.getText().split("=")[1].trim();
+        	System.err.println("Loading weights from " + filename);
+        	nn = new NeuralNetwork(filename, AgentData.stateSize, networkProcessor.size());
         }
     }
 
