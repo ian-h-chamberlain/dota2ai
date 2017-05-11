@@ -80,7 +80,7 @@ public class Action
 					"item_blades_of_attack", //420
 					"item_recipe_lesser_crit", // 500
 					"item_demon_edge", //2400
-					"item_recipe_greater_crit", // 1000
+					"item_greater_crit", // 1000
 					"item_hyperstone", //2000
 					"item_mjollnir_recipe" //900
 					
@@ -232,7 +232,7 @@ public class Action
             System.out.println( "Not learned yet" );
             return NOOP;
         }
-        if (a.getCooldownTimeRemaining() > 0f) 
+        if (a.getCooldownTimeRemaining() > 0f)
         {
             System.out.println( "On cooldown" );
             return NOOP;
@@ -472,17 +472,15 @@ public class Action
    
    public int determineShopType(String item)
    {
-	   
 	   int shopIndex = 0;
-	   
-	   
-	   
+	   if (shop.secretItems.contains(item))
+		   shopIndex = 2;
 	   return shopIndex;
    }
-   public Command sell( int slot ) 
+   public Command sell( int slot, String item ) 
    {
        SELL.setSlot( slot );
-       
+       data.inventory.remove(item);
        return SELL;
    }
 
