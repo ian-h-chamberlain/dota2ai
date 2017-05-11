@@ -175,9 +175,11 @@ public class AgentData {
 			}
 
 			float distance = Vec3.distance(ent.getOrigin(), agent.getOrigin());
-			float danger = (float) Math.pow((distance / range), -2f);
+			float danger = (float) Math.pow((distance / range), -1f);
 			
-			danger *= (float) ent.getHealth() / (float) ent.getMaxHealth();
+			danger = Math.min(danger, 1000f);
+			
+			danger *= (float) ent.getHealth();
 			
         	if (enemyHeroes.contains(ent)) {
         		nearbyEnemyHeroes[slice] += danger;
