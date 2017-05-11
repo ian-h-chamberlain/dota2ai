@@ -290,12 +290,13 @@ public class AgentData {
 		reward += damageReward;
 		reward += (agent.getGold() - gold);
 		reward += (((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300;
+		reward *= rewardMult;
 		/*if(agent.getHealth() > agent.getMaxHealth()/2){
 			reward += Vec3.distance(agent.getOrigin(), new float[]{-8000,-8000})/ 16000;
 		}*/
 		System.out.println("Reward: " + reward + " from " + damageReward + ", " + (10 * (agent.getGold() - gold)) + ", " + ((((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300));
 		//reward += 
-		return reward * rewardMult;
+		return reward;
 	}
 	
     private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {

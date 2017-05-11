@@ -120,7 +120,7 @@ public class Agent extends BaseBot {
         	nn = new NeuralNetwork(filename, AgentData.stateSize, networkProcessor.size());
         }
         if(e.getText().contains("gamma")){
-        	nn.gamma = Float.parseFloat(e.getText().split(":")[1]);
+        	nn.gamma = Float.parseFloat(e.getText().split("=")[1]);
         }
         if(e.getText().contains("reward multiplier")){
         	gameData.rewardMult = Float.parseFloat(e.getText().split(":")[1]);
