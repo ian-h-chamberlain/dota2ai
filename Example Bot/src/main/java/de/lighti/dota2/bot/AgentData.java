@@ -96,6 +96,10 @@ public class AgentData {
 		
 		shopLocations = new float[][]
 				{
+					//radiant spawn
+					{-7232f,-6644f, 0f },
+					//dire spawn
+					{7168f, 6097f, 0f},
 					//radiant secret
 					{-4726.10f, 1100f, 0f},
 					//dire secret
