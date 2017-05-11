@@ -24,23 +24,21 @@ function Dota2AI:OnGameRulesStateChange()
     print( "OnGameRulesStateChange: Game In Progress" )
 	BotPick()
 	
-	
-	
 	--Throwing in more bots to complete the teams. Activate the built-in AI if you like. 
 	--Via the parameters, you can set the hero, initial lane, skill level, and team for a bot. The game does not
 	--have behaviours for all different heroes though
+	numBots = table.getn(self.sBotSelection)
     
-    --Tutorial:AddBot( sHeroSelection[2], "top", "easy", true );
-    --Tutorial:AddBot( sHeroSelection[3], "top", "easy", true );
-    --Tutorial:AddBot( sHeroSelection[4], "bot", "easy", true );
-    --Tutorial:AddBot( sHeroSelection[5], "bot", "easy", true );
-    
-    
-    --Tutorial:AddBot( sHeroSelection[6], "top", "easy", false );
-    --Tutorial:AddBot( sHeroSelection[7], "top", "easy", false );
-    Tutorial:AddBot( "npc_dota_hero_zuus", "mid", "medium", false );
-    --Tutorial:AddBot( sHeroSelection[9], "bot", "easy", false );
-    --Tutorial:AddBot( sHeroSelection[10], "bot", "easy", false );    
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "top", "easy", true )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "top", "easy", true )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "bot", "easy", true )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "bot", "easy", true )
+
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "top", "easy", false )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "top", "easy", false )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "mid", "easy", false )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "bot", "easy", false )
+    Tutorial:AddBot( self.sBotSelection[math.random(numBots)], "bot", "easy", false )    
   end    
 end
 
