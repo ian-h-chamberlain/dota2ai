@@ -170,6 +170,9 @@ public class AgentData {
 			angle += Math.PI;
 			
 			int slice = (int) (angle / (Math.PI / 4f));
+			if(slice >= 8) {
+				slice -= 8;
+			}
 
 			float distance = Vec3.distance(ent.getOrigin(), agent.getOrigin());
 			float danger = (float) Math.pow((distance / range), -2f);

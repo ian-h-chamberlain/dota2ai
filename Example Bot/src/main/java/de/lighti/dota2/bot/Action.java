@@ -129,7 +129,7 @@ public class Action
 	{
 		
 		Command out = NOOP;
-		if (agent.getGold() >= 1000 && agent.getGold() >= itemCosts[buildIndex])
+		if (agent.getGold() >= 1000 && itemCosts.length < buildIndex && agent.getGold() >= itemCosts[buildIndex])
 		{
 			System.out.println("Build order index: " + buildIndex + "," + buildOrder[buildIndex]);
 			BaseEntity enemyHero = AgentData.getNearest(data.enemyHeroes, agent.getOrigin());
