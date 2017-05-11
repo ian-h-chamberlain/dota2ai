@@ -19,7 +19,28 @@ function Dota2AI:OnGameRulesStateChange()
     SendToServerConsole( "dota_dev forcegamestart" ) -- Skip the draft process
   elseif nNewState == DOTA_GAMERULES_STATE_POST_GAME then
     print( "OnGameRulesStateChange: Game Ended")
-	SendToServerConsole( "dota_launch_custom_game dota2ai dota")
+    request = CreateHTTPRequestScriptVM( "POST", Dota2AI.baseURL .. "/gameover")
+    request:SetHTTPRequestHeaderValue("Accept", "application/json")
+    request:SetHTTPRequestHeaderValue("X-Jersey-Tracing-Threshold", "VERBOSE" )
+    request:SetHTTPRequestRawPostBody("Content-Length", "0")
+    request:Send( function( result ) 
+      if result["StatusCode"] == 200 then
+	  	print ("Got response for gameover. Restarting")
+	    SendToServerConsole( "dota_launch_custom_game dota2ai dota")
+		-- No need to take action from response
+      else
+        Dota2AI.Error = true 
+        for k,v in pairs( result ) do
+          Warning( string.format( "%s : %s\n", k, v ) )
+        end   
+        Warning("Request was:")
+        Warning(self:JSONChat(event))
+		print ( "Failed to restart game based on lack of response from bot")
+      end
+    end )
+	
+	-- now restart the 	
+	
   elseif nNewState == DOTA_GAMERULES_STATE_GAME_IN_PROGRESS then
     print( "OnGameRulesStateChange: Game In Progress" )
 	BotPick()

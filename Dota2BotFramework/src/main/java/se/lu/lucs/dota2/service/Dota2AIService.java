@@ -165,6 +165,13 @@ public class Dota2AIService extends NanoHTTPD {
         LOGGER.info( "Select was called. We returned " + s.getHero() );
         return buildJSONResponse( s );
     }
+	
+	private void gameover (IHTTPSession session) {
+		if (lock.isHeldByCurrentThread()) {
+			lock.unlock();
+			System.err.println("Unlocking for gameover");
+		}
+	}
 
     /*
      * (non-Javadoc)
@@ -210,6 +217,10 @@ public class Dota2AIService extends NanoHTTPD {
                     }
                     res = update( session );
                     break;
+                case "gameover":
+                	gameover( session );
+                	res = newFixedLengthResponse( "" );
+                	break;
                 default:
                     res = newFixedLengthResponse( Response.Status.NOT_FOUND, MIME_PLAINTEXT, "method not found" );
                     break;
