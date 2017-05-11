@@ -28,6 +28,8 @@ public class NeuralNetwork {
 	
 	int numIterations = 0;
 	
+	float loss = 0;
+	
 	float[] inputs;
 	float[] outputs;
 	
@@ -246,7 +248,7 @@ public class NeuralNetwork {
 			.fetch("loss")
 			.run();
 		
-		float loss = outs.get(0).floatValue();
+		loss = outs.get(0).floatValue();
 		
 		System.out.println("Loss: " + loss);
 		

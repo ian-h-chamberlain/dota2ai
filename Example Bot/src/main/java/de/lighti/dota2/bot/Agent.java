@@ -1,6 +1,11 @@
 package de.lighti.dota2.bot;
 
+import java.util.Calendar;
 import java.util.Random;
+import java.util.StringJoiner;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 //import java.awt.Desktop.Action;
 import java.lang.System;
 
@@ -29,10 +34,12 @@ public class Agent extends BaseBot {
     Random r = new Random();
     private UtilityScorer scorer;
     Action actionController;
+    int numGamesPlayed =0;
 
     private static final boolean useTensor = true;
     int[] lastAction;
     float lastReward;
+    StringJoiner csvString = new StringJoiner("");
     public OutputProcess networkProcessor;
     
     boolean isDead = true;
@@ -94,7 +101,7 @@ public class Agent extends BaseBot {
     @Override
     public LevelUp levelUp() {
     	///Level = (Hero) world.getEntities().get( myIndex );
-    	if(agent == null){
+    	if(agent == null || levelIndex >= levels.length){
     		return null;
     	}
     	LEVELUP.setAbilityIndex(levels[levelIndex]);
@@ -125,6 +132,9 @@ public class Agent extends BaseBot {
         if(e.getText().contains("reward multiplier")){
         	gameData.rewardMult = Float.parseFloat(e.getText().split(":")[1]);
         }
+        if(e.getText().contains("csv")){
+        	writeData(this.numGamesPlayed);
+        }
     }
 
     @Override
@@ -134,8 +144,17 @@ public class Agent extends BaseBot {
         //myLevels = new int[5];
     }
 
+    public void writeData(int gameInt){
+    	String output = this.csvString.toString();
+		WriteCSV("Data for game "  + gameInt, output);
+		csvString = new StringJoiner("");
+    }
+    
     @Override
     public Select select() {
+    	if(this.csvString.length() > 1){
+    		writeData(numGamesPlayed++);
+    	}
         SELECT.setHero( MY_HERO_NAME );
         levelIndex = 0;
         return SELECT;
@@ -144,7 +163,6 @@ public class Agent extends BaseBot {
     @Override
     public Command update( World world ) {
 //        System.out.println( "I see " + world.searchIndexByClass( Tree.class ).size() + " trees" );
-
     	final int myIndex = world.searchIndexByName( MY_HERO_NAME );
         if (myIndex < 0) {
             //I'm probably dead
@@ -165,17 +183,32 @@ public class Agent extends BaseBot {
         
         gameData.populate(agent, world);
         if(!useTensor){
+
         	gameData.parseGameState(agent, world);
         }
         //Train agent on update
         if(useTensor){
+        	csvString.add(nn.loss + "," + this.gameData.reward +"\n");
+        	//rewardStrings.add(this.gameData.reward + ",");
         	train(agent, world);
         }
         return actionController.update(agent, world, scorer);
     }
     
     
-    
+	public static void WriteCSV(String filename, String contents){
+		try {
+			Calendar.getInstance();
+			PrintWriter writer = new PrintWriter(filename + Calendar.getInstance().getTimeInMillis() + ".csv","UTF-8");
+			writer.write(contents);
+			writer.close();
+		}catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+	}
     
     
     public interface Output{
@@ -233,6 +266,8 @@ public class Agent extends BaseBot {
     		}
     		return s;
     	}
+    	
+    	
     	
     	public Output[][] outputs = new Output[][]{
     		new Output[]{
