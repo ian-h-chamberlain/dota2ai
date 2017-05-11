@@ -281,7 +281,7 @@ public class AgentData {
 		
 		BaseNPC closestEnemy = (BaseNPC)getNearest(enemyHeroes, agent.getOrigin());
 		float damageReward = 0;
-		if(enemyHero != null && closestEnemy != null){
+		if(enemyHero != null && closestEnemy != null  && enemyHero.getHealth() != 0 && closestEnemy.getHealth() != 0){
 			
 			if(closestEnemy.getName().equals(enemyHero.getName())){
 				damageReward = enemyHero.getHealth() - closestEnemy.getHealth();
