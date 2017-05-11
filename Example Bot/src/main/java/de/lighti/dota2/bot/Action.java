@@ -121,10 +121,6 @@ public class Action
 	{
 		
 		Command out = NOOP;
-		if (!agent.isAlive())
-		{
-			return NOOP;
-		}
 		if (agent.getGold() >= 1000 && agent.getGold() >= itemCosts[buildIndex])
 		{
 			System.out.println("Build order index: " + buildIndex + "," + buildOrder[buildIndex]);
@@ -467,7 +463,6 @@ public class Action
            if(agent.getGold() < itemCosts[buildIndex])
            {
         	   BUYING = false;
-        	   return NOOP;
            }
            return BUY;
        }
