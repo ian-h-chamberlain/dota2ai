@@ -1,6 +1,5 @@
 package de.lighti.dota2.bot;
 
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
 import se.lu.lucs.dota2.framework.bot.Bot.Command;
@@ -21,6 +20,7 @@ import se.lu.lucs.dota2.framework.game.World;
 
 public class Action 
 {
+	Shop shop;
 	Attack ATTACK;
 	Buy BUY;
 	Sell SELL;
@@ -69,28 +69,37 @@ public class Action
 	}
 	private void init()
 	{
-
-		
+		shop = new Shop();
 		//items to buy
 		buildOrder = new String[]
 				{
 					"item_wraith_band",
 					"item_power_treads",
-					"item_ring_of_aquila",
 					"item_maelstrom",
-					"item_ultimate_scepter",
-					"item_mjollnir"
+					"item_broadsword",
+					"item_blades_of_attack", //420
+					"item_recipe_lesser_crit", // 500
+					"item_demon_edge", //2400
+					"item_recipe_greater_crit", // 1000
+					"item_hyperstone", //2000
+					"item_mjollnir_recipe" //900
+					
 				};
 		
 		//cost of items in build order
 		itemCosts = new int[]
 				{
-						485,
-						1350,
-						985,
-						2800,
-						2900,
-						4200
+					485,
+					1350,
+					2800,
+					1200,
+					420,
+					500,
+					2400,
+					1000,
+					2000,
+					900
+					
 				};
 		//matches selection type index
 		//0.0f means zero priority 
@@ -110,16 +119,34 @@ public class Action
 	}
 	public Command update(Hero agent, World world, UtilityScorer scorer)
 	{
+		
 		Command out = NOOP;
-		//need input from mode or NN to set agent to buy items
-		if (BUYING)
+		if (!agent.isAlive())
 		{
-			if (data.gold >= itemCosts[buildIndex])
+			return NOOP;
+		}
+		if (agent.getGold() >= 1000 && agent.getGold() >= itemCosts[buildIndex])
+		{
+			System.out.println("Build order index: " + buildIndex + "," + buildOrder[buildIndex]);
+			BaseEntity enemyHero = AgentData.getNearest(data.enemyHeroes, agent.getOrigin());
+			if (enemyHero == null)
 			{
-				 return buy(agent, world, buildOrder[buildIndex]);
+				BUYING = true;
+			}
+			else {
+				float dist = Vec3.distance(enemyHero.getOrigin(), agent.getOrigin());
+				if (dist > 2500)
+				{
+					BUYING = true;
+				}
 			}
 		}
+		if (BUYING)
+			return buy(agent, world, buildOrder[buildIndex]);
+
+		//need input from mode or NN to set agent to buy items
 		BaseEntity e = null;
+
         long t = System.currentTimeMillis();
         
         //targetFilter(agent, 0, filterType.HEALTH.ordinal());
@@ -138,7 +165,7 @@ public class Action
             	 if(c != NOOP){
             		 return c;
             	 }
-            	 
+            	 //////.
             }
         } 
 
@@ -428,25 +455,35 @@ public class Action
     	return MOVE;
     }
 
-   public Command buy( Hero agent, World world, String item ) {
-       final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals("ent_dota_fountain_good") )
-               .findAny().get().getValue();
-       float dist = Vec3.distance(fountain.getOrigin(), agent.getOrigin());
-       
+   public Command buy( Hero agent, World world, String item) {
+       float[] shopPos = data.shopLocations[shop.getShopIndex(item)];
+       float dist = Vec3.distance(shopPos, agent.getOrigin());
        if (dist < 200)
        {
-           System.out.println("Buying" + item);
+           System.out.println(item);
            buildIndex++;
            BUY.setItem( item );
            data.inventory.add(item);
+           if(agent.getGold() < itemCosts[buildIndex])
+           {
+        	   BUYING = false;
+        	   return NOOP;
+           }
            return BUY;
        }
-       else 
-       {
-    	  return retreat(world);
-       }
+
+	  return goTo(shopPos);
    }
    
+   public int determineShopType(String item)
+   {
+	   
+	   int shopIndex = 0;
+	   
+	   
+	   
+	   return shopIndex;
+   }
    public Command sell( int slot ) 
    {
        SELL.setSlot( slot );
