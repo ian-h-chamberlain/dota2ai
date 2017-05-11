@@ -31,6 +31,7 @@ public class AgentData {
 	public float nextReward = 0;
 	BaseEntity owner;
 	public ArrayList<String> inventory;
+	public float rewardMult = 1;
 	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	BaseNPC enemyHero;
@@ -272,7 +273,7 @@ public class AgentData {
 		}*/
 		System.out.println("Reward: " + reward + " from " + damageReward + ", " + (10 * (agent.getGold() - gold)) + ", " + ((((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300));
 		//reward += 
-		return reward;
+		return reward * rewardMult;
 	}
 	
     private static Set<BaseEntity> findEntitiesInRange( World world, BaseEntity center, float range ) {

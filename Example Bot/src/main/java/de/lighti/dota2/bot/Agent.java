@@ -2,6 +2,7 @@ package de.lighti.dota2.bot;
 
 import java.util.Arrays;
 import java.util.Random;
+//import java.awt.Desktop.Action;
 import java.lang.System;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,10 +105,8 @@ public class Agent extends BaseBot {
     	if(agent == null){
     		return null;
     	}
-    	if(agent.getLevel() == 1){
-    		levelIndex = 0;
-    	}
-    	LEVELUP.setAbilityIndex(levelIndex);
+    	LEVELUP.setAbilityIndex(levels[levelIndex]);
+    	levelIndex++;
     	return LEVELUP;
     }
 
@@ -118,6 +117,12 @@ public class Agent extends BaseBot {
         }
         if(e.getText().contains("epsilon")){
         	nn.epsilon = Float.parseFloat(e.getText().split(":")[1]);
+        }
+        if(e.getText().contains("gamma")){
+        	nn.gamma = Float.parseFloat(e.getText().split(":")[1]);
+        }
+        if(e.getText().contains("reward multiplier")){
+        	gameData.rewardMult = Float.parseFloat(e.getText().split(":")[1]);
         }
     }
 
@@ -131,6 +136,7 @@ public class Agent extends BaseBot {
     @Override
     public Select select() {
         SELECT.setHero( MY_HERO_NAME );
+        levelIndex = 0;
         return SELECT;
     }
 
@@ -306,6 +312,21 @@ public class Agent extends BaseBot {
 						actionController.mode = Action.selectionType.allyCreeps;
 					}
     			}
+    		},
+    		new Output[]{//ABILITY SELECTION
+    				new Output(){
+        				public void Run() {
+    						actionController.currentCast = Action.ability.Q;
+    					}
+        			},new Output(){
+        				public void Run() {
+        					actionController.currentCast = Action.ability.R;
+    					}
+        			},new Output(){
+        				public void Run() {
+        					actionController.currentCast = Action.ability.NONE;
+    					}
+        			},
     		}
     	};
     }

@@ -52,6 +52,14 @@ public class Action
 		HEALTH, DISTANCE, LEVEL
 	}
 	
+	public enum ability{
+		Q,W,E,R,NONE
+	}
+	
+	public static final int[] manaCosts = new int[]{40,0,0,60,0};
+	public static final int[] ranges = new int[]{1800,0,0,2000,0};
+	public ability currentCast = ability.NONE;
+	
 	public Action(Attack a, Cast c, Move m, Noop n, Buy b, Sell s, AgentData d)
 	{
 		ATTACK = a;
@@ -60,7 +68,7 @@ public class Action
 		NOOP = n;
 		BUY = b;
 		SELL = s;
-		data = d;		
+		data = d;
 		init();
 	}
 	
@@ -124,13 +132,13 @@ public class Action
         
         //targetFilter(agent, 0, filterType.HEALTH.ordinal());
         // 					  ^-- determined by utility scorer mode.
-       
+        e = targetFilter(agent, mode.ordinal());
         if(t < animCooldown){//if we're animating do nothing so we don't cancel.
         	return NOOP;
         }
         if(t > attackSpeedCooldown)
         {
-        	e = targetFilter(agent, mode.ordinal());
+        	
             if (e != null) 
             {
             	 System.out.println(e.getName());
@@ -141,11 +149,18 @@ public class Action
             	 
             }
         } 
-
-       //if (e == null)
-       //{
+        if(currentCast.equals(ability.R)){
+    		e= targetFilter(agent,selectionType.enemyHeroes.ordinal());
+    	}
+        if(canCast(agent,e,ranges[currentCast.ordinal()])){
+        	//System.out.println("CASTING: " + currentCast);
+        	Command c = this.castSpell(agent, e, world, this.currentCast.ordinal());
+        	if(currentCast.equals(ability.R)){
+        		this.waitForMS(2000);
+        	}
+        	return c;
+        }
        out = goTo (scorer.getPoint(data.pos));
-       //}
        return out;
 	}
 	public Command attack( Hero agent, World world, BaseEntity e)
@@ -153,34 +168,63 @@ public class Action
         if (e == null) 
         {
             //Nothing in range
-            System.out.println( "No enemy in range" );
+//            System.out.println( "No enemy in range" );
             return NOOP;
         }
         final int targetindex = world.indexOf( e );
+        
         if(isTargetable(agent,e,agent.getAttackRange())){
             ATTACK.setTarget( targetindex );
             this.waitForMS(attackAnimDelay);
         	attackSpeedCooldown = System.currentTimeMillis() + attackDelay;
         }else{
-        	System.out.println("can't attack this frame");
+//        	System.out.println("can't attack this frame");
         	return NOOP;
         }
         return ATTACK;
 	}
 	
+	public boolean canCast(Hero agent, BaseEntity e, float range){
+		//BaseNPC target = (BaseNPC)e;
+		if(!isTargetable(agent, e, range)){
+//			System.out.println("Not targetable. Range;" + range);
+			return false;
+		}
+		//Ability a = agent.getAbilities().get(currentCast.ordinal());
+		/*if(a.getTargetTeam() != target.getTeam()){
+			System.out.println("incorrect team");
+			return false;
+		}*/
+		if(agent.getMana() < manaCosts[currentCast.ordinal()]){
+//			System.out.println("not enough mana");
+			return false;
+		}
+		
+		return true;
+	}
 	
 	public boolean isTargetable(Hero agent, BaseEntity e,float range){
 		BaseNPC target = (BaseNPC)e;
+		if(e == null){
+			//System.out.println("null");
+			return false;
+		}
+		if(agent == null) {
+//			System.out.println("hero null");
+			return false;
+		}
 		if(Vec3.distance(e.getOrigin(),agent.getOrigin()) > range){
+//			System.out.println("out of range");
 			return false;
 		}
 		if(target.getTeam() == agent.getTeam() && !target.isDeniable()){
+//			System.out.println("not deniable");
 			return false;
 		}
 		return true;
 	}
 	
-	
+	/*
 	public Command spellHandler(Hero agent, World world, BaseEntity e)
 	{
 		Command command = NOOP;
@@ -194,7 +238,7 @@ public class Action
 		}
 		
 		return command;
-	}
+	}*/
     public Command castSpell( Hero agent, BaseEntity target, World world, int abilityIndex)
     {
         final int index = abilityIndex;
@@ -206,12 +250,12 @@ public class Action
        // System.out.println( "Will try " + a.getName() );
         if (a.getLevel() < 1) 
         {
-            System.out.println( "Not learned yet" );
+//            System.out.println( "Not learned yet" );
             return NOOP;
         }
         if (a.getCooldownTimeRemaining() > 0f) 
         {
-            System.out.println( "On cooldown" );
+//            System.out.println( "On cooldown" );
             return NOOP;
         }
         CAST.setAbility( index );
@@ -411,7 +455,7 @@ public class Action
     public Command retreat( World world ) 
     {
         //Retreat at 30% health
-        System.out.println( "Lina is retreating" );
+//        System.out.println( "Lina is retreating" );
         final BaseNPC fountain = (BaseNPC) world.getEntities().entrySet().stream().filter( p -> p.getValue().getName().equals("ent_dota_fountain_good") )
                         .findAny().get().getValue();
         final float[] targetPos = fountain.getOrigin();
@@ -453,14 +497,14 @@ public class Action
        
        return SELL;
    }
-
+/*
     private static float distance( BaseEntity a, BaseEntity b )
     {
         final float[] posA = a.getOrigin();
         final float[] posB = b.getOrigin();
         return Vec3.distance( posA, posB );
     }
-
+*/
 
 }
 
