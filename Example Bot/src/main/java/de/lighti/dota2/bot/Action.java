@@ -79,6 +79,7 @@ public class Action
 	{
 		shop = new Shop();
 		//items to buy
+		buildIndex = 0;
 		buildOrder = new String[]
 				{
 					"item_wraith_band",
@@ -87,11 +88,8 @@ public class Action
 					"item_broadsword",
 					"item_blades_of_attack", //420
 					"item_recipe_lesser_crit", // 500
-					"item_demon_edge", //2400
 					"item_greater_crit", // 1000
-					"item_hyperstone", //2000
-					"item_mjollnir_recipe" //900
-					
+					"item_mjollnir" //900
 				};
 		
 		//cost of items in build order
@@ -103,10 +101,8 @@ public class Action
 					1200,
 					420,
 					500,
-					2400,
-					1000,
-					2000,
-					900
+					3400,
+					2900
 					
 				};
 		//matches selection type index
@@ -129,9 +125,10 @@ public class Action
 	{
 		
 		Command out = NOOP;
-		if (agent.getGold() >= 1000 && itemCosts.length < buildIndex && agent.getGold() >= itemCosts[buildIndex])
+		if (agent.getGold() >= 1000 &&  buildIndex < buildOrder.length && agent.getGold() >= itemCosts[buildIndex])
 		{
 			System.out.println("Build order index: " + buildIndex + "," + buildOrder[buildIndex]);
+			
 			BaseEntity enemyHero = AgentData.getNearest(data.enemyHeroes, agent.getOrigin());
 			if (enemyHero == null)
 			{
@@ -145,8 +142,22 @@ public class Action
 				}
 			}
 		}
-		if (BUYING)
+		if (agent.getGold() < 1000 && buildIndex < buildOrder.length && agent.getGold() >= itemCosts[buildIndex])
+		{
+			float dist = Vec3.distance(agent.getOrigin(), data.shopLocations[shop.getShopIndex(buildOrder[buildIndex])]);
+			
+			if (dist < 180)
+			{
+
+				return buy(agent,world, buildOrder[buildIndex]);
+			}
+		}
+			
+		if (BUYING && buildIndex < buildOrder.length)
+		{
+			System.out.println(buildIndex);
 			return buy(agent, world, buildOrder[buildIndex]);
+		}
 
 		//need input from mode or NN to set agent to buy items
 		BaseEntity e = null;
@@ -173,12 +184,13 @@ public class Action
             }
         } 
         if(currentCast.equals(ability.R)){
-    		e= targetFilter(agent,selectionType.enemyHeroes.ordinal());
+    		e = targetFilter(agent,selectionType.enemyHeroes.ordinal());
     	}
         if(canCast(agent,e,ranges[currentCast.ordinal()])){
         	//System.out.println("CASTING: " + currentCast);
         	Command c = this.castSpell(agent, e, world, this.currentCast.ordinal());
-        	if(currentCast.equals(ability.R)){
+        	if(currentCast.equals(ability.R))
+        	{
         		this.waitForMS(2000);
         	}
         	return c;
@@ -433,7 +445,6 @@ public class Action
     			return targets;
     		case 2:
     			targets = data.enemyTurrets;
-    			targets.addAll(data.friendlyTurrets);
     			return targets;
     		case 3:
     			targets = data.friendlyCreeps;
@@ -501,26 +512,27 @@ public class Action
        if (dist < 200)
        {
            System.out.println(item);
-           buildIndex++;
-           BUY.setItem( item );
-           data.inventory.add(item);
-           if(agent.getGold() < itemCosts[buildIndex])
+           if (!data.inventory.contains(item))
+           {
+        	   data.inventory.add(item);
+
+           }
+    	   buildIndex++;
+    	   if (buildIndex > itemCosts.length)
+    	   {
+    		   BUYING = false;
+    	   }
+    	   else if(agent.getGold() < itemCosts[buildIndex])
            {
         	   BUYING = false;
            }
+           BUY.setItem( item );   
            return BUY;
        }
 
 	  return goTo(shopPos);
    }
-   
-   public int determineShopType(String item)
-   {
-	   int shopIndex = 0;
-	   if (shop.secretItems.contains(item))
-		   shopIndex = 2;
-	   return shopIndex;
-   }
+
    public Command sell( int slot, String item ) 
    {
        SELL.setSlot( slot );

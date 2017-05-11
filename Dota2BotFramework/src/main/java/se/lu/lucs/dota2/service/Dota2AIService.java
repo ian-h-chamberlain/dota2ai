@@ -132,12 +132,25 @@ public class Dota2AIService extends NanoHTTPD {
     }
 
     private Response levelup( IHTTPSession session ) throws JsonProcessingException {
-        final Response res = assureAcceptJSON( session );
-        if (res != null) {
-            return res;
-        }
-        final LevelUp l = bot.levelUp();
-        return buildJSONResponse( l );
+    	boolean gotLock = lock.tryLock();
+    	if(gotLock || System.currentTimeMillis() >= timeToUnlock){
+    		if(System.currentTimeMillis() >= timeToUnlock){
+    			lock = new ReentrantLock();
+    		}
+    		else if (gotLock)
+    			lock.unlock();
+
+			final Response res = assureAcceptJSON( session );
+			if (res != null) {
+				return res;
+			}
+			final LevelUp l = bot.levelUp();
+			return buildJSONResponse( l );
+    	}
+    	else {
+    		System.err.println("ERROR THE LOCK IS ALREADY IN USE");
+    		return buildJSONResponse(BaseBot.NOOP);
+    	}
     }
 
     /**
