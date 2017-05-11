@@ -234,6 +234,8 @@ public class Dota2AIService extends NanoHTTPD {
     		//System.out.println("ending update");
     		if (gotLock)
     			lock.unlock();
+    		else
+    			lock = new ReentrantLock();
     		
     		return buildJSONResponse( c );
     	}else{
