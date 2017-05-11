@@ -45,6 +45,8 @@ public class Dota2AIService extends NanoHTTPD {
     private final static String CONTENT_TYPE = "content-type";
 
 	ReentrantLock lock = new ReentrantLock();
+	
+	long timeToUnlock = System.currentTimeMillis() + 5000;
 
     static {
         MAPPER.configure( Feature.AUTO_CLOSE_SOURCE, false );
@@ -222,12 +224,17 @@ public class Dota2AIService extends NanoHTTPD {
     }
 
     private Response update( IHTTPSession session ) throws IOException {
-    	if(lock.tryLock()){
+    	boolean gotLock = lock.tryLock();
+    	if(gotLock || System.currentTimeMillis() >= timeToUnlock){
+    		timeToUnlock = System.currentTimeMillis() + 5000;
+    		
     		final World world = MAPPER.readValue( session.getInputStream(), World.class );
     		listeners.stream().forEach( l -> l.update( world ) );
     		final Command c = bot.update( world );
     		//System.out.println("ending update");
-    		lock.unlock();
+    		if (gotLock)
+    			lock.unlock();
+    		
     		return buildJSONResponse( c );
     	}else{
     		System.err.println("ERROR THE LOCK IS ALREADY IN USE");
