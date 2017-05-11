@@ -1,15 +1,11 @@
 package de.lighti.dota2.bot;
 
-import java.util.Arrays;
 import java.util.Random;
 import java.lang.System;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import se.lu.lucs.dota2.framework.bot.BaseBot;
 import se.lu.lucs.dota2.framework.bot.BotCommands.LevelUp;
 import se.lu.lucs.dota2.framework.bot.BotCommands.Select;
-import se.lu.lucs.dota2.framework.game.BaseEntity;
 import se.lu.lucs.dota2.framework.game.ChatEvent;
 import se.lu.lucs.dota2.framework.game.Hero;
 import se.lu.lucs.dota2.framework.game.World;
@@ -40,8 +36,6 @@ public class Agent extends BaseBot {
     
     boolean isDead = true;
     
-    private float[] lastData;
-    
     public static Agent instance = null;
     
     public Agent() {
@@ -57,7 +51,7 @@ public class Agent extends BaseBot {
         networkProcessor = new OutputProcess();
         if(useTensor){
         	System.out.println("creating neural network");
-        	nn = new NeuralNetwork(gameData.stateSize, networkProcessor.size());
+        	nn = new NeuralNetwork(AgentData.stateSize, networkProcessor.size());
         }
         //System.out.println("nn: " + nn);
     }
@@ -94,8 +88,6 @@ public class Agent extends BaseBot {
     	lastReward = gameData.reward;
     	
     	lastAction = chosenAction;
-
-    	lastData = data.clone();
     }
     
     @Override
@@ -114,10 +106,19 @@ public class Agent extends BaseBot {
     @Override
     public void onChat( ChatEvent e ) {
         if(e.getText().contains("learning rate")){
-        	nn.learningRate = Float.parseFloat(e.getText().split(":")[1]);
+        	nn.learningRate = Float.parseFloat(e.getText().split("=")[1]);
         }
         if(e.getText().contains("epsilon")){
-        	nn.epsilon = Float.parseFloat(e.getText().split(":")[1]);
+        	nn.epsilon = Float.parseFloat(e.getText().split("=")[1]);
+        }
+        if(e.getText().contains("save")) {
+        	nn.saveWeights(e.getText().split("=")[1].trim());
+        }
+        if(e.getText().contains("load")) {
+        	// load a previously saved weight file
+        	String filename = e.getText().split("=")[1].trim();
+        	System.err.println("Loading weights from " + filename);
+        	nn = new NeuralNetwork(filename, AgentData.stateSize, networkProcessor.size());
         }
     }
 
@@ -155,16 +156,7 @@ public class Agent extends BaseBot {
         isDead = false;
 
         agent = (Hero) world.getEntities().get( myIndex );
-        if(gameData == null)
-        {
-        	//put the gamedata and score initializer here so it can access the agent. 
-        	gameData = new AgentData();
-        	scorer = new UtilityScorer(gameData);
-        	if(useTensor){
-        		nn = new NeuralNetwork(gameData.stateSize, 3);
-        	}
-            System.out.println("nn: " + nn);
-        }
+        
         gameData.populate(agent, world);
         if(!useTensor){
         	gameData.parseGameState(agent, world);

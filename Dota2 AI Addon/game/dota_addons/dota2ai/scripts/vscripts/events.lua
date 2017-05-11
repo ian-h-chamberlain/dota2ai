@@ -19,7 +19,7 @@ function Dota2AI:OnGameRulesStateChange()
     SendToServerConsole( "dota_dev forcegamestart" ) -- Skip the draft process
   elseif nNewState == DOTA_GAMERULES_STATE_POST_GAME then
     print( "OnGameRulesStateChange: Game Ended")
-	SendToServerConsole( "dota_launch_custom_game dota2ai dota")
+	SendToServerConsole( "restart")
   elseif nNewState == DOTA_GAMERULES_STATE_GAME_IN_PROGRESS then
     print( "OnGameRulesStateChange: Game In Progress" )
 	BotPick()

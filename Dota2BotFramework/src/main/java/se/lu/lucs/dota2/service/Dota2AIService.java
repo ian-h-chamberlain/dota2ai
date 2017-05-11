@@ -117,7 +117,16 @@ public class Dota2AIService extends NanoHTTPD {
 
     private void chat( IHTTPSession session ) throws JsonParseException, JsonMappingException, IOException {
         final ChatEvent e = MAPPER.readValue( session.getInputStream(), ChatEvent.class );
-        bot.onChat( e );
+        
+        // lock if this is a valid command
+        if (e.getText().contains("=")) {
+        	lock.lock();
+        	bot.onChat( e );
+        	lock.unlock();
+        }
+        else {
+        	bot.onChat(e);
+        }
     }
 
     private Response levelup( IHTTPSession session ) throws JsonProcessingException {
