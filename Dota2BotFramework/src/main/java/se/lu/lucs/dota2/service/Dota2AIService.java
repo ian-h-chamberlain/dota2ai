@@ -226,14 +226,20 @@ public class Dota2AIService extends NanoHTTPD {
     private Response update( IHTTPSession session ) throws IOException {
     	boolean gotLock = lock.tryLock();
     	if(gotLock || System.currentTimeMillis() >= timeToUnlock){
+    		if(System.currentTimeMillis() >= timeToUnlock){
+    			lock = new ReentrantLock();
+    		}
+    		else if (gotLock)
+    			lock.unlock();
+    		
     		timeToUnlock = System.currentTimeMillis() + 5000;
     		
     		final World world = MAPPER.readValue( session.getInputStream(), World.class );
     		listeners.stream().forEach( l -> l.update( world ) );
     		final Command c = bot.update( world );
     		//System.out.println("ending update");
-    		if (gotLock)
-    			lock.unlock();
+    		//else
+    			//lock = new ReentrantLock();
     		
     		return buildJSONResponse( c );
     	}else{

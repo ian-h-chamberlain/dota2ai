@@ -27,6 +27,8 @@ public class AgentData {
 	public float nextReward = 0;
 	BaseEntity owner;
 	public ArrayList<String> inventory;
+	public float rewardMult = 1;
+	//public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	public int inventoryValue = 0;
 	public static int stateSize = 47; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
@@ -168,6 +170,9 @@ public class AgentData {
 			angle += Math.PI;
 			
 			int slice = (int) (angle / (Math.PI / 4f));
+			if(slice >= 8) {
+				slice -= 8;
+			}
 
 			float distance = Vec3.distance(ent.getOrigin(), agent.getOrigin());
 			float danger = (float) Math.pow((distance / range), -2f);
@@ -288,6 +293,7 @@ public class AgentData {
 		reward += damageReward;
 		reward += (agent.getGold() - gold);
 		reward += (((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300;
+		reward *= rewardMult;
 		/*if(agent.getHealth() > agent.getMaxHealth()/2){
 			reward += Vec3.distance(agent.getOrigin(), new float[]{-8000,-8000})/ 16000;
 		}*/
