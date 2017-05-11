@@ -2,15 +2,11 @@ package de.lighti.dota2.bot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import se.lu.lucs.dota2.framework.game.Ability;
 import se.lu.lucs.dota2.framework.game.BaseEntity;
 import se.lu.lucs.dota2.framework.game.BaseNPC;
 import se.lu.lucs.dota2.framework.game.Hero;
@@ -27,12 +23,14 @@ public class AgentData {
 	
 	int tookDamage = 0;
 	int damageCounter, framesToCheckDamage = 5;
-
+	public float[][] shopLocations;
 	public float nextReward = 0;
 	BaseEntity owner;
 	public ArrayList<String> inventory;
 	public float rewardMult = 1;
-	public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	//public static int stateSize = 43; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
+	public int inventoryValue = 0;
+	public static int stateSize = 47; // MAKE SURE TO UPDATE ACCORDING TO parseGameState!
 	
 	BaseNPC enemyHero;
 	
@@ -97,6 +95,22 @@ public class AgentData {
 	public AgentData()
 	{
 		inventory = new ArrayList<String>();
+		
+		shopLocations = new float[][]
+				{
+					//radiant spawn
+					{-7232f,-6644f, 0f },
+					//dire spawn
+					{7168f, 6097f, 0f},
+					//radiant secret
+					{-4726.10f, 1100f, 0f},
+					//dire secret
+					{4792f, -1700f, 0f },
+					//bot side shop
+					{7168f, -4200f, 0f},
+					//top side shop
+					{-7150f, 4000f, 0f}
+				};
 	}
 	
 	public float[] parseGameState(Hero agent, World world){
@@ -118,7 +132,7 @@ public class AgentData {
     	
     	// update tookDamage
     	damageCounter++;
-    	if (Math.abs(oldHP - hp) > 0.001)
+    	if (Math.abs(oldHP - hp) > 0.01)
     	{
     		tookDamage = 1;
     		damageCounter = 0;
@@ -127,30 +141,7 @@ public class AgentData {
     	{
     		tookDamage = 0;
     	}
-    	/*Map<Integer, Ability> map = agent.getAbilities();
-    	for (Map.Entry<Integer, Ability> entry : map.entrySet())
-    	{
-    		System.out.println(entry.getKey() + "/" + entry.getValue());
-    	}
     	
-    	 //Obtain entities in a wide range (Attack Range * 10)
-        final Set<BaseEntity> e = findEntitiesInRange( world, agent, range*10 ).stream().filter( p -> p instanceof BaseNPC )
-                .filter( p -> ((BaseNPC) p).getTeam() == 3 ).collect( Collectors.toSet() );
-     
-        
-        
-        //Filter enemies in range (
-        final ArrayList<BaseEntity> enemies = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).collect(Collectors.toList());
-        final ArrayList<BaseEntity> towers = (ArrayList<BaseEntity>) e.stream().filter( f -> ((BaseNPC) f).getTeam() != agent.getTeam() ).filter( f -> f.getClass() == Tower.class).collect(Collectors.toList());
-        
-        
-        
-        //Tower info, add all distances from visible enemy towers to this hash map.
-        for (int i = 0; i < towers.size(); i++)
-        {
-        	towerDistances.put(towers.get(i).getName(), distance(pos, towers.get(i).getOrigin()));
-        }
-        */
 
     	final Set<BaseEntity> ents = findEntitiesInRange(world, agent, range*10);
         
@@ -179,10 +170,9 @@ public class AgentData {
 			angle += Math.PI;
 			
 			int slice = (int) (angle / (Math.PI / 4f));
-			
-			
+
 			float distance = Vec3.distance(ent.getOrigin(), agent.getOrigin());
-			float danger = (float) Math.exp((double) (-distance / range));
+			float danger = (float) Math.pow((distance / range), -2f);
 			
 			danger *= (float) ent.getHealth() / (float) ent.getMaxHealth();
 			
@@ -212,6 +202,31 @@ public class AgentData {
         	}
         }
         
+        // Get info about the current target
+        BaseNPC target = (BaseNPC) world.getEntities().get(agent.getAttackTarget());
+        float targetHealth = 0, isTargeting = 0, inRange = 0, inTargetRange = 0;
+        
+        if (target != null) {
+			
+			targetHealth = (float) target.getHealth() / (float) target.getMaxHealth();
+			isTargeting = 0;
+			if (agent.equals(world.getEntities().get(target.getAttackTarget()))) {
+				isTargeting = 1;
+			}
+			
+			float distanceFromTarget = Vec3.distance(target.getOrigin(), agent.getOrigin());
+			
+			inRange = 0;
+			if (distanceFromTarget < agent.getAttackRange()) {
+				inRange = 1;
+			}
+			
+			inTargetRange = 0;
+			if (distanceFromTarget < target.getAttackRange()) {
+				inRange = 1;
+			}
+        }
+        
         //Package data and send to NN
         //I can make this more organized if necessary.
 		float parsedData[] = new float[stateSize];
@@ -238,7 +253,14 @@ public class AgentData {
 		
 		parsedData[42] = tookDamage;
 		
+		parsedData[43] = targetHealth;
+		parsedData[44] = isTargeting;
+		parsedData[45] = inRange;
+		parsedData[46] = inTargetRange;
+		
 		lastData = parsedData.clone();
+		
+		System.err.println(Arrays.toString(parsedData));
 		
 		return parsedData;
 	}
