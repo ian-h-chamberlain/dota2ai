@@ -229,14 +229,15 @@ public class Dota2AIService extends NanoHTTPD {
     		if(System.currentTimeMillis() >= timeToUnlock){
     			lock = new ReentrantLock();
     		}
+    		else if (gotLock)
+    			lock.unlock();
+    		
     		timeToUnlock = System.currentTimeMillis() + 5000;
     		
     		final World world = MAPPER.readValue( session.getInputStream(), World.class );
     		listeners.stream().forEach( l -> l.update( world ) );
     		final Command c = bot.update( world );
     		//System.out.println("ending update");
-    		if (gotLock)
-    			lock.unlock();
     		//else
     			//lock = new ReentrantLock();
     		
