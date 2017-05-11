@@ -125,6 +125,16 @@ public class Action
 	{
 		
 		Command out = NOOP;
+		if (buildIndex < buildOrder.length && agent.getGold() >= itemCosts[buildIndex])
+		{
+			float dist = Vec3.distance(agent.getOrigin(), data.shopLocations[shop.getShopIndex(buildOrder[buildIndex])]);
+			
+			if (dist < 180)
+			{
+
+				return buy(agent,world, buildOrder[buildIndex]);
+			}
+		}
 		if (agent.getGold() >= 1000 &&  buildIndex < buildOrder.length && agent.getGold() >= itemCosts[buildIndex])
 		{
 			System.out.println("Build order index: " + buildIndex + "," + buildOrder[buildIndex]);
@@ -142,16 +152,7 @@ public class Action
 				}
 			}
 		}
-		if (agent.getGold() < 1000 && buildIndex < buildOrder.length && agent.getGold() >= itemCosts[buildIndex])
-		{
-			float dist = Vec3.distance(agent.getOrigin(), data.shopLocations[shop.getShopIndex(buildOrder[buildIndex])]);
-			
-			if (dist < 180)
-			{
 
-				return buy(agent,world, buildOrder[buildIndex]);
-			}
-		}
 			
 		if (BUYING && buildIndex < buildOrder.length)
 		{

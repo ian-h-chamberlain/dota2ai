@@ -155,6 +155,7 @@ public class Agent extends BaseBot {
     	if(this.csvString.length() > 1){
     		writeData(numGamesPlayed++);
     	}
+        actionController = new Action(ATTACK, CAST, MOVE, NOOP, BUY, SELL, gameData);
         SELECT.setHero( MY_HERO_NAME );
         levelIndex = 0;
         return SELECT;
