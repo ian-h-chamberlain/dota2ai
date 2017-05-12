@@ -293,7 +293,7 @@ public class AgentData {
 		}
 		enemyHero = closestEnemy;
 		reward += damageReward;
-		reward += (agent.getGold() - gold);
+		reward += Math.max(0f, agent.getGold() - gold);
 		reward += (((float)agent.getHealth()/(float)agent.getMaxHealth()) - hp) * 300;
 		reward *= rewardMult;
 		/*if(agent.getHealth() > agent.getMaxHealth()/2){

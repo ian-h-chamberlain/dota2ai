@@ -41,7 +41,6 @@ Dota2AI.sBotSelection = {
 	"npc_dota_hero_sand_king",
 	"npc_dota_hero_nevermore",
 	"npc_dota_hero_skywrath_mage",
-	"npc_dota_hero_sniper",
 	"npc_dota_hero_sven",
 	"npc_dota_hero_tidehunter",
 	"npc_dota_hero_tiny",
